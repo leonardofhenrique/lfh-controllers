@@ -3,7 +3,11 @@
 ## Vários modelos de controlador
 
 - **Modelo no firmware**: o firmware responde a um pedido de identificação com código do modelo, nome (hoje "Fader 4", nome temporário) e versão. O nome fica num texto do firmware, fácil de trocar. Configuradores antigos continuam funcionando.
-- **Configurador por modelo**: uma página só, que conecta, lê o modelo e mostra a interface certa (faders no Fader 4, botões no controlador de botões). Conexão, salvar e presets compartilhados entre os modelos. Firmware sem identificação (v2) é tratado como Fader 4.
+- **Configurador por modelo**: uma página só, que conecta, lê o modelo e mostra a interface certa (faders no Fader 4, botões no controlador de botões). Conexão, salvar e presets compartilhados entre os modelos. Se o firmware não tiver identificação:
+  - **firmware LFH antigo (v1/v2)**: só existia no Fader 4, então a página mostra "firmware desatualizado" e oferece atualizar para o firmware do Fader 4;
+  - **firmware desconhecido**: mostra um erro e oferece gravar o firmware, com a pessoa escolhendo o modelo numa lista.
+  
+  Os botões de gravar dependem da gravação pelo navegador (abaixo); até lá, a mensagem orienta a gravar pela IDE do Arduino.
 
 ## Gravar firmware sem a IDE do Arduino
 
