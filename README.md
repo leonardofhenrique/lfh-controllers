@@ -10,11 +10,11 @@ Controlador MIDI USB de 4 faders feito com Arduino (ATmega32u4), configurável p
 
 - Em qual entrada analógica cada fader está ligado, de três jeitos:
   - **Mexa para associar**: clique no fader na tela e mexa o fader físico
-  - **Identificar entradas**: a entrada acende quando você mexe o fader; arraste ela até o fader na tela
-  - lista **Entrada** de cada fader
+  - **Identificar entradas**: as entradas dos faders mexidos aparecem nos 4 quadrados; arraste uma até o fader na tela
+  - **tocar e tocar** (funciona no celular): toque numa entrada e depois no fader
 - Ordem dos faders na tela (arraste o ⠿)
 - Apelido de cada fader (até 12 caracteres, gravado no controlador)
-- Canal MIDI e número de CC
+- Canal MIDI (um só para os 4 faders) e número de CC de cada fader
 - Valores mínimo e máximo (alças arrastáveis no trilho)
 - Inverter o sentido do fader
 - Enviar 0 quando o fader chega ao fim do curso

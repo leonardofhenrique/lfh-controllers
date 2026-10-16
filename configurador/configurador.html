@@ -50,6 +50,12 @@
   header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
   h1 { font-size: 22px; margin: 0; letter-spacing: .2px; }
   h2 { font-size: 14px; margin: 0; }
+  .title { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .channel-pill {
+    flex-direction: row; align-items: center; gap: 2px; font-size: 14px; color: var(--muted);
+    border: 1px solid var(--border); border-radius: 999px; padding: 2px 4px 2px 12px; background: var(--surface);
+  }
+  .channel-pill select { width: auto; border: none; background: transparent; font-weight: 650; padding: 2px 4px; cursor: pointer; }
   .status { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
   .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
   .status.on .dot { background: var(--ok); }
@@ -87,6 +93,12 @@
   .chip.used { border-color: var(--accent); }
   .chip.lit { background: var(--accent); border-color: var(--accent); color: var(--accent-text); transform: scale(1.07); }
   .chip.lit small { color: var(--accent-text); }
+  .chip.empty { border-style: dashed; color: var(--muted); cursor: default; }
+  .chip.unassigned { border-color: var(--warn); }
+  .chip.unassigned small { color: var(--warn); }
+  .chip.picked { outline: 2px solid var(--accent); outline-offset: 2px; }
+  body.picking .strip { cursor: copy; }
+  body.picking .strip:hover { border-color: var(--accent); }
 
   /* mesa */
   .mixer { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
@@ -129,8 +141,13 @@
     padding: 1px 6px; font-variant-numeric: tabular-nums; color: var(--text); min-width: 32px; text-align: center;
   }
   .handle:focus-visible span { box-shadow: 0 0 0 3px var(--accent-soft); }
-  .readout { text-align: center; font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; min-height: 30px; }
-  .readout small { font-size: 12px; font-weight: 400; color: var(--muted); }
+  .readout { display: flex; flex-direction: column; align-items: center; line-height: 1.15; font-variant-numeric: tabular-nums; min-height: 42px; }
+  .readout span { font-size: 22px; font-weight: 650; }
+  .readout small { font-size: 12px; color: var(--muted); }
+  .pinbox {
+    display: flex; align-items: center; justify-content: center; height: 32px; font-size: 15px; font-weight: 650;
+    color: var(--text); border: 1px solid var(--accent); border-radius: 6px; background: var(--accent-soft);
+  }
 
   .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .full { grid-column: 1 / -1; }
@@ -161,7 +178,10 @@
 <div class="wrap">
   <header>
     <div>
-      <h1>LFH Fader 4</h1>
+      <div class="title">
+        <h1>LFH Fader 4</h1>
+        <label class="channel-pill">Canal <select id="channel" aria-label="Canal MIDI dos 4 faders"></select></label>
+      </div>
       <div class="status" id="status"><span class="dot"></span><span id="statusText">Desconectado</span></div>
     </div>
     <button class="primary" id="connectBtn">Conectar controlador</button>
@@ -172,15 +192,9 @@
   <div class="card">
     <div class="toolbar">
       <h2>Entradas físicas</h2>
-      <div class="inline">
-        <button id="identifyBtn" aria-pressed="false" disabled>Identificar entradas</button>
-        <label class="inline">Canal de todos
-          <select id="allChannel"></select>
-          <button id="applyChannel">Aplicar</button>
-        </label>
-      </div>
+      <button id="identifyBtn" aria-pressed="false" disabled>Identificar entradas</button>
     </div>
-    <p class="hint" id="pinHint">Arraste uma entrada até um fader para ligar os dois. Com <b>Identificar entradas</b> ligado, a entrada acende quando você mexe no fader ligado nela.</p>
+    <p class="hint" id="pinHint"></p>
     <div class="pins" id="pins"></div>
   </div>
 
@@ -194,14 +208,15 @@
       <li>Para dizer qual fader físico é qual na tela, use um destes jeitos:
         <ul>
           <li>Clique em <b>Mexa para associar</b> e mexa o fader físico: ele é ligado sozinho.</li>
-          <li>Ligue <b>Identificar entradas</b>, mexa um fader, veja qual entrada acende e arraste ela até o fader na tela.</li>
+          <li>Ligue <b>Identificar entradas</b> e mexa os faders: as entradas deles aparecem nos quadrados de cima. Arraste uma entrada até o fader na tela, ou toque nela e depois no fader.</li>
         </ul>
       </li>
+      <li>O <b>Canal</b>, ao lado do nome lá em cima, vale para os 4 faders.</li>
       <li>Arraste o <b>⠿</b> no topo de um fader para mudar a ordem. Clique no nome para dar um apelido.</li>
       <li>Arraste as alças laranja ao lado do trilho para escolher os valores mínimo e máximo. Use <b>Inverter</b> se o fader estiver ao contrário.</li>
       <li>Clique em <b>Salvar no controlador</b>. Tudo fica gravado nele, mesmo se ele for desligado ou ligado em outro computador.</li>
     </ol>
-    <p class="hint">Funciona no Google Chrome ou no Microsoft Edge.</p>
+    <p class="hint">Configurador v2.1. Funciona no Google Chrome ou no Microsoft Edge.</p>
   </details>
 </div>
 
@@ -236,6 +251,10 @@ let pending = null;      // { expect, resolve, timer } aguardando resposta
 let identifyOn = false;  // botao "Identificar entradas"
 let assigning = null;    // { index, since, timer } durante "Mexa para associar"
 let monitorTimer = null;
+let slots = null;        // modo Identificar: entradas encontradas, na ordem em que foram mexidas
+let identifySince = 0;
+let picked = null;       // entrada escolhida no "tocar e tocar"
+let channelNotice = false;
 const pinHist = [];      // por entrada: [[tempo, valor 0-127], ...]
 const pinRaw = [];
 
@@ -276,14 +295,8 @@ function channelOptions(sel) {
   return html;
 }
 
-function pinOptions(sel) {
-  let html = '';
-  for (let p = 0; p < numPins; p++) html += `<option value="${p}"${p === sel ? ' selected' : ''}>A${p}</option>`;
-  return html;
-}
-
 function render() {
-  $('allChannel').innerHTML = channelOptions(config.faders[0].channel);
+  $('channel').innerHTML = channelOptions(config.faders[0].channel);
   $('mixer').innerHTML = config.faders.map((f, i) => `
     <div class="strip${assigning && assigning.index === i ? ' assigning' : ''}" data-strip="${i}">
       <div class="strip-top">
@@ -299,13 +312,12 @@ function render() {
         <div class="handle max" id="hmax${i}" data-i="${i}" data-h="max" tabindex="0" role="slider" aria-label="Valor máximo"><span></span></div>
         <div class="handle min" id="hmin${i}" data-i="${i}" data-h="min" tabindex="0" role="slider" aria-label="Valor mínimo"><span></span></div>
       </div>
-      <div class="readout" id="val${i}"><small>–</small></div>
+      <div class="readout"><span id="val${i}">–</span><small id="midi${i}"></small></div>
       <div class="assign-msg" id="amsg${i}"></div>
       <div class="controls">
         <button class="full" data-assign="${i}" ${out ? '' : 'disabled'}>${assigning && assigning.index === i ? 'Mexa o fader agora… (cancelar)' : 'Mexa para associar'}</button>
-        <label>Entrada<select data-i="${i}" data-k="pin">${pinOptions(f.pin)}</select></label>
-        <label>Canal<select data-i="${i}" data-k="channel">${channelOptions(f.channel)}</select></label>
-        <label class="full">CC<input type="number" min="0" max="127" value="${f.cc}" data-i="${i}" data-k="cc"></label>
+        <label>Entrada<div class="pinbox" title="Arraste uma entrada de cima até este fader">A${f.pin}</div></label>
+        <label>CC<input type="number" min="0" max="127" value="${f.cc}" data-i="${i}" data-k="cc"></label>
         <button data-toggle="invert" data-i="${i}" aria-pressed="${f.invert}">⇅ Inverter</button>
         <button data-toggle="zero" data-i="${i}" aria-pressed="${f.zero}" title="Manda 0 quando o fader está no fim do curso">0 no fim</button>
       </div>
@@ -318,16 +330,32 @@ function render() {
   changed();
 }
 
+// 4 quadrados: normalmente as entradas dos faders; no modo Identificar,
+// as entradas que foram mexidas (e "?" para as que faltam)
 function renderPins() {
-  let html = '';
-  for (let p = 0; p < numPins; p++) {
+  const list = slots
+    ? [...slots, ...Array(NUM_FADERS - slots.length).fill(null)]
+    : [...new Set(config.faders.map(f => f.pin))].sort((a, b) => a - b);
+  $('pins').innerHTML = list.map(p => {
+    if (p === null) return '<div class="chip empty"><b>?</b><small>mexa um fader</small></div>';
     const owner = config.faders.findIndex(f => f.pin === p);
-    html += `<div class="chip${owner >= 0 ? ' used' : ''}" draggable="true" data-pin="${p}" id="chip${p}"
-                  title="Arraste até um fader">
-               <b>A${p}</b><small>${owner >= 0 ? esc(label(owner)) : 'livre'}</small>
-             </div>`;
-  }
-  $('pins').innerHTML = html;
+    return `<div class="chip${owner >= 0 ? ' used' : ' unassigned'}${picked === p ? ' picked' : ''}" draggable="true"
+                 data-pin="${p}" id="chip${p}" title="Arraste até um fader, ou toque aqui e depois no fader">
+              <b>A${p}</b><small>${owner >= 0 ? esc(label(owner)) : 'não associada'}</small>
+            </div>`;
+  }).join('');
+
+  $('pinHint').innerHTML = picked !== null
+    ? `Agora toque no fader que deve usar a entrada <b>A${picked}</b>. (Esc cancela)`
+    : slots
+      ? 'Mexa cada fader físico: a entrada dele aparece num quadrado e acende enquanto ele se mexe.'
+      : 'Estas são as entradas dos 4 faders. Arraste uma até um fader, ou toque nela e depois no fader, para trocar. Para descobrir em quais entradas os faders estão, clique em <b>Identificar entradas</b> e mexa neles.';
+}
+
+function pickPin(p) {
+  picked = p;
+  document.body.classList.toggle('picking', p !== null);
+  renderPins();
 }
 
 // posiciona a faixa e as alças de mínimo/máximo
@@ -351,7 +379,8 @@ function setCap(i, v) {
   const cap = $('cap' + i);
   if (!cap) return;
   cap.style.bottom = pct(v);
-  $('val' + i).textContent = v;
+  $('val' + i).textContent = Math.round(v / 127 * 100) + '%';
+  $('midi' + i).textContent = `MIDI ${v}`;
 }
 
 // chamado depois de qualquer alteração
@@ -365,15 +394,14 @@ function validate() {
   const pins = {}, ccs = {};
   config.faders.forEach((f, i) => {
     (pins[f.pin] = pins[f.pin] || []).push(label(i));
-    const key = `${f.channel}:${f.cc}`;
-    (ccs[key] = ccs[key] || []).push(label(i));
+    (ccs[f.cc] = ccs[f.cc] || []).push(label(i));
   });
+  if (channelNotice)
+    msgs.push(['warn', `Os faders estavam em canais diferentes. Todos foram colocados no canal ${config.faders[0].channel + 1}; clique em Salvar para gravar.`]);
   for (const p in pins) if (pins[p].length > 1)
     msgs.push(['warn', `${pins[p].join(' e ')} estão na mesma entrada (A${p}).`]);
-  for (const k in ccs) if (ccs[k].length > 1) {
-    const [ch, cc] = k.split(':');
-    msgs.push(['warn', `${ccs[k].join(' e ')} enviam o mesmo CC ${cc} no canal ${+ch + 1}.`]);
-  }
+  for (const cc in ccs) if (ccs[cc].length > 1)
+    msgs.push(['warn', `${ccs[cc].join(' e ')} enviam o mesmo CC ${cc}.`]);
   showMsgs(msgs);
 }
 
@@ -398,6 +426,7 @@ function setConnected(on, name, fw) {
   $('connectBtn').textContent = on ? 'Reconectar' : 'Conectar controlador';
   if (!on) {
     identifyOn = false;
+    slots = null;
     $('identifyBtn').setAttribute('aria-pressed', 'false');
     stopAssign();
     updateMonitor();
@@ -439,13 +468,20 @@ mixer.addEventListener('change', e => {
   if (isNaN(i) || !k) return;
   const f = config.faders[i];
   if (k === 'name') { el.value = f.name; return; }
-  if (k === 'pin') { assignPin(i, +el.value); return; }
-  if (k === 'channel') f.channel = +el.value;
   if (k === 'cc') { f.cc = clamp(el.value, 0, 127); el.value = f.cc; }
   changed();
 });
 
 mixer.addEventListener('click', e => {
+  // "tocar e tocar": com uma entrada escolhida, tocar no fader liga os dois
+  const strip = e.target.closest('.strip');
+  if (picked !== null && strip && !e.target.closest('button, input, .handle, .grip')) {
+    const p = picked, i = +strip.dataset.strip;
+    pickPin(null);
+    assignPin(i, p);
+    toast(`${label(i)} ligado na entrada A${p}.`, 'ok');
+    return;
+  }
   const t = e.target.closest('[data-toggle]');
   if (t) {
     const f = config.faders[+t.dataset.i];
@@ -508,9 +544,17 @@ mixer.addEventListener('keydown', e => {
 
 let dragStrip = null;
 
-$('pins').addEventListener('dragstart', e => {
-  const c = e.target.closest('.chip');
+$('pins').addEventListener('click', e => {
+  const c = e.target.closest('.chip[data-pin]');
   if (!c) return;
+  const p = +c.dataset.pin;
+  pickPin(picked === p ? null : p);
+});
+
+$('pins').addEventListener('dragstart', e => {
+  const c = e.target.closest('.chip[data-pin]');
+  if (!c) { e.preventDefault(); return; }
+  if (picked !== null) pickPin(null);
   e.dataTransfer.setData('text/x-pin', c.dataset.pin);
   e.dataTransfer.effectAllowed = 'copy';
 });
@@ -564,10 +608,12 @@ mixer.addEventListener('drop', e => {
   }
 });
 
-$('applyChannel').addEventListener('click', () => {
-  const ch = +$('allChannel').value;
+// o canal vale para os 4 faders
+$('channel').addEventListener('change', e => {
+  const ch = +e.target.value;
   config.faders.forEach(f => f.channel = ch);
-  render();
+  channelNotice = false;
+  changed();
 });
 
 /* ---------- identificar entradas ---------- */
@@ -575,6 +621,9 @@ $('applyChannel').addEventListener('click', () => {
 $('identifyBtn').addEventListener('click', () => {
   identifyOn = !identifyOn;
   $('identifyBtn').setAttribute('aria-pressed', identifyOn);
+  slots = identifyOn ? [] : null;
+  identifySince = performance.now() + 400;  // ignora o salto das leituras ao ligar o modo
+  renderPins();
   updateMonitor();
 });
 
@@ -622,6 +671,15 @@ function onPins(d) {
     const chip = $('chip' + p);
     if (chip) chip.classList.toggle('lit', activity(p, now - 800) > 12);
   }
+
+  // modo Identificar: cada entrada mexida ocupa o próximo quadrado livre
+  if (slots && slots.length < NUM_FADERS && now > identifySince) {
+    let found = false;
+    for (let p = 0; p < numPins && slots.length < NUM_FADERS; p++) {
+      if (!slots.includes(p) && activity(p, identifySince) > 30) { slots.push(p); found = true; }
+    }
+    if (found) renderPins();
+  }
   config.faders.forEach((f, i) => {
     if (pinRaw[f.pin] !== undefined) setCap(i, previewValue(f, Math.round(pinRaw[f.pin] * 1023 / 127)));
   });
@@ -667,7 +725,11 @@ function stopAssign() {
   updateMonitor();
 }
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') stopAssign(); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  stopAssign();
+  if (picked !== null) pickPin(null);
+});
 
 /* ---------- MIDI ---------- */
 
@@ -720,6 +782,10 @@ function onMessage(e) {
       }
       config = { faders };
       savedJson = JSON.stringify(config);
+      // a página usa um canal só; se o controlador tiver canais diferentes, usa o do Fader 1
+      const ch = faders[0].channel;
+      channelNotice = faders.some(f => f.channel !== ch);
+      faders.forEach(f => f.channel = ch);
       render();
     }
   }
@@ -845,13 +911,14 @@ $('importFile').addEventListener('change', async e => {
     // aceita também os arquivos da versão 1 (onde mínimo > máximo invertia o fader)
     if (!['lfh-fader-4', 'fader-config'].includes(data.tipo) || !Array.isArray(data.faders)) throw new Error();
     const base = defaultConfig();
+    const ch = clamp((data.faders[0] || {}).channel, 0, 15);
     config = {
       faders: base.faders.map((d, i) => {
         const f = data.faders[i] || d;
         const min = clamp(f.min, 0, 127), max = clamp(f.max, 0, 127);
         return {
           pin: clamp(f.pin, 0, numPins - 1),
-          channel: clamp(f.channel, 0, 15),
+          channel: ch,
           cc: clamp(f.cc, 0, 127),
           min: Math.min(min, max),
           max: Math.max(min, max),
