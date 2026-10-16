@@ -6,6 +6,7 @@
 <title>LFH Fader 4</title>
 <style>
   :root {
+    color-scheme: light;
     --bg: #f3f3f0;
     --surface: #ffffff;
     --border: #dadad4;
@@ -23,6 +24,7 @@
   }
   @media (prefers-color-scheme: dark) {
     :root {
+      color-scheme: dark;  /* listas e campos nativos do navegador também no escuro */
       --bg: #141413;
       --surface: #201f1e;
       --border: #383835;
@@ -73,6 +75,7 @@
     font: inherit; color: var(--text); background: var(--bg);
     border: 1px solid var(--border); border-radius: 6px; padding: 5px 7px; min-width: 0; width: 100%;
   }
+  option { background: var(--surface); color: var(--text); }
   label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
 
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; }
@@ -148,6 +151,7 @@
     display: flex; align-items: center; justify-content: center; height: 32px; font-size: 15px; font-weight: 650;
     color: var(--text); border: 1px solid var(--accent); border-radius: 6px; background: var(--accent-soft);
   }
+  .pinbox.ccbox { border-color: var(--border); background: var(--bg); }
 
   .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .full { grid-column: 1 / -1; }
@@ -211,7 +215,7 @@
           <li>Ligue <b>Identificar entradas</b> e mexa os faders: as entradas deles aparecem nos quadrados de cima. Arraste uma entrada até o fader na tela, ou toque nela e depois no fader.</li>
         </ul>
       </li>
-      <li>O <b>Canal</b>, ao lado do nome lá em cima, vale para os 4 faders.</li>
+      <li>O <b>Canal</b>, ao lado do nome lá em cima, vale para os 4 faders. O CC segue a posição: o 1º fader manda CC 1, o 2º manda CC 2, e assim por diante.</li>
       <li>Arraste o <b>⠿</b> no topo de um fader para mudar a ordem. Clique no nome para dar um apelido.</li>
       <li>Arraste as alças laranja ao lado do trilho para escolher os valores mínimo e máximo. Use <b>Inverter</b> se o fader estiver ao contrário.</li>
       <li>Clique em <b>Salvar no controlador</b>. Tudo fica gravado nele, mesmo se ele for desligado ou ligado em outro computador.</li>
@@ -255,6 +259,7 @@ let slots = null;        // modo Identificar: entradas encontradas, na ordem em 
 let identifySince = 0;
 let picked = null;       // entrada escolhida no "tocar e tocar"
 let channelNotice = false;
+let ccNotice = false;
 const pinHist = [];      // por entrada: [[tempo, valor 0-127], ...]
 const pinRaw = [];
 
@@ -296,6 +301,7 @@ function channelOptions(sel) {
 }
 
 function render() {
+  config.faders.forEach((f, i) => f.cc = i + 1);  // o CC segue a posição: 1º fader = CC 1...
   $('channel').innerHTML = channelOptions(config.faders[0].channel);
   $('mixer').innerHTML = config.faders.map((f, i) => `
     <div class="strip${assigning && assigning.index === i ? ' assigning' : ''}" data-strip="${i}">
@@ -317,7 +323,7 @@ function render() {
       <div class="controls">
         <button class="full" data-assign="${i}" ${out ? '' : 'disabled'}>${assigning && assigning.index === i ? 'Mexa o fader agora… (cancelar)' : 'Mexa para associar'}</button>
         <label>Entrada<div class="pinbox" title="Arraste uma entrada de cima até este fader">A${f.pin}</div></label>
-        <label>CC<input type="number" min="0" max="127" value="${f.cc}" data-i="${i}" data-k="cc"></label>
+        <label>CC<div class="pinbox ccbox" title="O CC segue a posição do fader">${f.cc}</div></label>
         <button data-toggle="invert" data-i="${i}" aria-pressed="${f.invert}">⇅ Inverter</button>
         <button data-toggle="zero" data-i="${i}" aria-pressed="${f.zero}" title="Manda 0 quando o fader está no fim do curso">0 no fim</button>
       </div>
@@ -391,17 +397,14 @@ function changed() {
 
 function validate() {
   const msgs = [];
-  const pins = {}, ccs = {};
-  config.faders.forEach((f, i) => {
-    (pins[f.pin] = pins[f.pin] || []).push(label(i));
-    (ccs[f.cc] = ccs[f.cc] || []).push(label(i));
-  });
+  const pins = {};
+  config.faders.forEach((f, i) => (pins[f.pin] = pins[f.pin] || []).push(label(i)));
   if (channelNotice)
     msgs.push(['warn', `Os faders estavam em canais diferentes. Todos foram colocados no canal ${config.faders[0].channel + 1}; clique em Salvar para gravar.`]);
+  if (ccNotice)
+    msgs.push(['warn', 'Os CCs foram reorganizados pela posição dos faders (1º fader = CC 1, 2º = CC 2...); clique em Salvar para gravar.']);
   for (const p in pins) if (pins[p].length > 1)
     msgs.push(['warn', `${pins[p].join(' e ')} estão na mesma entrada (A${p}).`]);
-  for (const cc in ccs) if (ccs[cc].length > 1)
-    msgs.push(['warn', `${ccs[cc].join(' e ')} enviam o mesmo CC ${cc}.`]);
   showMsgs(msgs);
 }
 
@@ -467,9 +470,7 @@ mixer.addEventListener('change', e => {
   const i = +el.dataset.i, k = el.dataset.k;
   if (isNaN(i) || !k) return;
   const f = config.faders[i];
-  if (k === 'name') { el.value = f.name; return; }
-  if (k === 'cc') { f.cc = clamp(el.value, 0, 127); el.value = f.cc; }
-  changed();
+  if (k === 'name') el.value = f.name;
 });
 
 mixer.addEventListener('click', e => {
@@ -786,6 +787,7 @@ function onMessage(e) {
       const ch = faders[0].channel;
       channelNotice = faders.some(f => f.channel !== ch);
       faders.forEach(f => f.channel = ch);
+      ccNotice = faders.some((f, i) => f.cc !== i + 1);
       render();
     }
   }
