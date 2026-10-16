@@ -9,6 +9,8 @@
   
   Os botões de gravar dependem da gravação pelo navegador (abaixo); até lá, a mensagem orienta a gravar pela IDE do Arduino.
 
+- **Renomear o repositório**: quando houver mais de um modelo, trocar `lfh-fader-4` por algo como `lfh-controllers`. O GitHub mantém histórico e releases e redireciona o link antigo; depois é só atualizar o endereço do `origin` na pasta local.
+
 ## Gravar firmware sem a IDE do Arduino
 
 - **Pelo navegador**: uma página que grava o `.hex` direto na placa pelo Chrome/Edge (Web Serial). Nas placas ATmega32u4 a página coloca a placa em modo de gravação (reset a 1200 bps); o navegador pode pedir para escolher a porta duas vezes. Para virar um link, precisa de hospedagem (GitHub Pages é grátis só para repositório público).
