@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Configurador de Faders</title>
+<style>
+  :root {
+    --bg: #f5f5f2;
+    --surface: #ffffff;
+    --border: #dcdcd6;
+    --text: #1d1d1b;
+    --muted: #6b6b66;
+    --accent: #e0662a;
+    --accent-text: #ffffff;
+    --ok: #2f8a4c;
+    --warn: #b7791f;
+    --err: #c0392b;
+    --meter-bg: #ececE7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161615;
+      --surface: #21211f;
+      --border: #3a3a37;
+      --text: #ededea;
+      --muted: #9d9d97;
+      --accent: #f07a3e;
+      --accent-text: #161615;
+      --ok: #5cc27c;
+      --warn: #e0a84a;
+      --err: #ec6b5e;
+      --meter-bg: #2e2e2b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 24px 16px 120px; }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  h1 { font-size: 22px; margin: 0; }
+  h2 { font-size: 15px; margin: 0 0 12px; }
+  .status { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
+  .status.on .dot { background: var(--ok); }
+  .status.on { color: var(--text); }
+  button {
+    font: inherit; cursor: pointer; border-radius: 8px; padding: 9px 16px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  }
+  button:hover:not(:disabled) { border-color: var(--muted); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .general { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; margin-bottom: 16px; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+  label.check { flex-direction: row; align-items: center; gap: 8px; color: var(--text); }
+  input[type=number], select {
+    font: inherit; color: var(--text); background: var(--bg);
+    border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; min-width: 0;
+  }
+  input[type=number] { width: 76px; }
+  .inline { display: flex; gap: 8px; align-items: center; }
+  .faders { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+  .fader { transition: border-color .15s; }
+  .fader.active { border-color: var(--accent); }
+  .fader-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .fader-head strong { font-size: 15px; }
+  .value { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
+  .meter { height: 6px; background: var(--meter-bg); border-radius: 3px; overflow: hidden; margin-bottom: 12px; }
+  .meter div { height: 100%; width: 0; background: var(--accent); transition: width .08s; }
+  .fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .fields input[type=number], .fields select { width: 100%; }
+  .fader .check { margin-top: 10px; font-size: 13px; }
+  .msgs { margin: 12px 0; display: flex; flex-direction: column; gap: 6px; }
+  .msg { font-size: 14px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); }
+  .msg.warn { border-color: var(--warn); }
+  .msg.err { border-color: var(--err); }
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface);
+    border-top: 1px solid var(--border); padding: 12px 16px;
+  }
+  .bar .inner { max-width: 1040px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .bar .spacer { flex: 1; }
+  .toast { font-size: 14px; color: var(--muted); }
+  .toast.ok { color: var(--ok); }
+  .toast.err { color: var(--err); }
+  details { margin-top: 24px; }
+  summary { cursor: pointer; font-weight: 600; }
+  details ol { padding-left: 20px; color: var(--muted); }
+  details li { margin: 6px 0; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Configurador de Faders</h1>
+      <div class="status" id="status"><span class="dot"></span><span id="statusText">Desconectado</span></div>
+    </div>
+    <button class="primary" id="connectBtn">Conectar controlador</button>
+  </header>
+
+  <div class="msgs" id="msgs"></div>
+
+  <div class="card general">
+    <label>Quantidade de faders
+      <input type="number" id="numFaders" min="1" max="12" value="4">
+    </label>
+    <label>Canal MIDI de todos os faders
+      <span class="inline">
+        <select id="allChannel"></select>
+        <button id="applyChannel">Aplicar</button>
+      </span>
+    </label>
+  </div>
+
+  <div class="faders" id="faders"></div>
+
+  <details>
+    <summary>Como usar</summary>
+    <ol>
+      <li>Ligue o controlador no USB. Feche o seu DAW ou outros programas de música, porque no Windows só um programa por vez pode usar o controlador.</li>
+      <li>Clique em <b>Conectar controlador</b> e permita o acesso a dispositivos MIDI quando o navegador pedir.</li>
+      <li>Mexa em um fader: o cartão dele acende e mostra o valor enviado. Assim você descobre qual é qual.</li>
+      <li>Ajuste canal, CC, valores mínimo e máximo e o pino de cada fader, depois clique em <b>Salvar no controlador</b>. A configuração fica gravada no controlador, mesmo se ele for desligado.</li>
+      <li>Para inverter um fader, coloque o mínimo maior que o máximo (ex.: mínimo 127, máximo 0).</li>
+      <li>Use <b>Exportar</b> e <b>Importar</b> para guardar ou compartilhar configurações.</li>
+    </ol>
+    <p class="value">Funciona no Google Chrome ou no Microsoft Edge.</p>
+  </details>
+</div>
+
+<div class="bar">
+  <div class="inner">
+    <button class="primary" id="saveBtn" disabled>Salvar no controlador</button>
+    <button id="reloadBtn" disabled>Ler do controlador</button>
+    <button id="resetBtn">Restaurar padrão</button>
+    <span class="toast" id="toast"></span>
+    <span class="spacer"></span>
+    <button id="exportBtn">Exportar</button>
+    <button id="importBtn">Importar</button>
+    <input type="file" id="importFile" accept=".json,application/json" class="hidden">
+  </div>
+</div>
+
+<script>
+// Protocolo SysEx: F0 7D 46 <comando> ... F7 (igual ao firmware MIDI_FADER_CONFIG)
+const SYSEX_ID = 0x7D, DEVICE = 0x46;
+const CMD = { GET: 0x01, CONFIG: 0x02, SET: 0x03, RESET: 0x04, ACK: 0x05 };
+const MAX_FADERS = 12;
+const FLAG_ZERO = 0x01;
+
+let info = { fw: null, maxFaders: MAX_FADERS, numPins: 12 };
+let config = defaultConfig();
+let midi = null, out = null, inp = null;
+let pending = null;  // { cmd, resolve, timer } aguardando resposta
+
+const $ = id => document.getElementById(id);
+
+function defaultConfig() {
+  // igual ao padrão do firmware: 4 faders em A3, A2, A1, A0 -> CC 1 a 4
+  const faders = [];
+  for (let i = 0; i < MAX_FADERS; i++) {
+    faders.push({
+      pin: i < 4 ? 3 - i : i % info.numPins,
+      channel: 0,
+      cc: i + 1,
+      min: i < 4 ? 42 : 0,
+      max: 127,
+      zero: i < 4,
+    });
+  }
+  return { numFaders: 4, faders };
+}
+
+/* ---------- interface ---------- */
+
+function channelOptions(sel) {
+  let html = '';
+  for (let c = 0; c < 16; c++) html += `<option value="${c}"${c === sel ? ' selected' : ''}>${c + 1}</option>`;
+  return html;
+}
+
+function pinOptions(sel) {
+  let html = '';
+  for (let p = 0; p < info.numPins; p++) html += `<option value="${p}"${p === sel ? ' selected' : ''}>A${p}</option>`;
+  return html;
+}
+
+function render() {
+  $('numFaders').max = info.maxFaders;
+  $('numFaders').value = config.numFaders;
+  $('allChannel').innerHTML = channelOptions(config.faders[0].channel);
+
+  let html = '';
+  for (let i = 0; i < config.numFaders; i++) {
+    const f = config.faders[i];
+    html += `
+      <div class="card fader" id="fader${i}">
+        <div class="fader-head"><strong>Fader ${i + 1}</strong><span class="value" id="val${i}">–</span></div>
+        <div class="meter"><div id="meter${i}"></div></div>
+        <div class="fields">
+          <label>Pino<select data-i="${i}" data-k="pin">${pinOptions(f.pin)}</select></label>
+          <label>Canal<select data-i="${i}" data-k="channel">${channelOptions(f.channel)}</select></label>
+          <label>CC<input type="number" min="0" max="127" value="${f.cc}" data-i="${i}" data-k="cc"></label>
+          <label>Mínimo<input type="number" min="0" max="127" value="${f.min}" data-i="${i}" data-k="min"></label>
+          <label>Máximo<input type="number" min="0" max="127" value="${f.max}" data-i="${i}" data-k="max"></label>
+        </div>
+        <label class="check"><input type="checkbox" data-i="${i}" data-k="zero"${f.zero ? ' checked' : ''}>Enviar 0 no fim do curso</label>
+      </div>`;
+  }
+  $('faders').innerHTML = html;
+  validate();
+}
+
+function clamp(v, lo, hi) {
+  v = parseInt(v, 10);
+  if (isNaN(v)) v = lo;
+  return Math.min(hi, Math.max(lo, v));
+}
+
+$('faders').addEventListener('change', e => {
+  const el = e.target;
+  const i = +el.dataset.i, k = el.dataset.k;
+  if (isNaN(i) || !k) return;
+  const f = config.faders[i];
+  if (k === 'zero') f.zero = el.checked;
+  else if (k === 'pin') f.pin = +el.value;
+  else if (k === 'channel') f.channel = +el.value;
+  else { f[k] = clamp(el.value, 0, 127); el.value = f[k]; }
+  validate();
+});
+
+$('numFaders').addEventListener('change', e => {
+  config.numFaders = clamp(e.target.value, 1, info.maxFaders);
+  render();
+});
+
+$('applyChannel').addEventListener('click', () => {
+  const ch = +$('allChannel').value;
+  config.faders.forEach(f => f.channel = ch);
+  render();
+});
+
+function validate() {
+  const msgs = [];
+  const active = config.faders.slice(0, config.numFaders);
+  const pins = {}, ccs = {};
+  active.forEach((f, i) => {
+    (pins[f.pin] = pins[f.pin] || []).push(i + 1);
+    const key = `${f.channel}:${f.cc}`;
+    (ccs[key] = ccs[key] || []).push(i + 1);
+  });
+  for (const p in pins) if (pins[p].length > 1)
+    msgs.push(['warn', `Os faders ${pins[p].join(', ')} estão no mesmo pino (A${p}).`]);
+  for (const k in ccs) if (ccs[k].length > 1) {
+    const [ch, cc] = k.split(':');
+    msgs.push(['warn', `Os faders ${ccs[k].join(', ')} enviam o mesmo CC ${cc} no canal ${+ch + 1}.`]);
+  }
+  showMsgs(msgs);
+}
+
+let connMsg = null;
+function showMsgs(msgs) {
+  const all = connMsg ? [connMsg, ...msgs] : msgs;
+  $('msgs').innerHTML = all.map(([t, m]) => `<div class="msg ${t}">${m}</div>`).join('');
+}
+
+function toast(text, kind = '') {
+  const t = $('toast');
+  t.textContent = text;
+  t.className = 'toast ' + kind;
+}
+
+function setConnected(on, name) {
+  $('status').classList.toggle('on', on);
+  $('statusText').textContent = on ? `Conectado: ${name} (firmware v${info.fw})` : 'Desconectado';
+  $('saveBtn').disabled = !on;
+  $('reloadBtn').disabled = !on;
+  $('connectBtn').textContent = on ? 'Reconectar' : 'Conectar controlador';
+}
+
+/* ---------- MIDI ---------- */
+
+function sendSysex(cmd, data = []) {
+  out.send([0xF0, SYSEX_ID, DEVICE, cmd, ...data, 0xF7]);
+}
+
+// envia um comando e espera a resposta CONFIG (ou ACK)
+function request(port, cmd, data, expect, ms = 1500) {
+  return new Promise(resolve => {
+    if (pending) clearTimeout(pending.timer);
+    pending = { expect, resolve, timer: setTimeout(() => { pending = null; resolve(null); }, ms) };
+    port.send([0xF0, SYSEX_ID, DEVICE, cmd, ...data, 0xF7]);
+  });
+}
+
+function onMessage(e) {
+  const d = e.data;
+  // CC vindo dos faders: atualiza o medidor do cartão correspondente
+  if ((d[0] & 0xF0) === 0xB0 && e.target === inp) {
+    const ch = d[0] & 0x0F;
+    config.faders.slice(0, config.numFaders).forEach((f, i) => {
+      if (f.channel === ch && f.cc === d[1]) showValue(i, d[2]);
+    });
+    return;
+  }
+  if (d[0] !== 0xF0 || d[1] !== SYSEX_ID || d[2] !== DEVICE) return;
+
+  const cmd = d[3];
+  if (cmd === CMD.CONFIG) {
+    info = { fw: d[4], maxFaders: d[5], numPins: d[6] };
+    const faders = [];
+    let p = 8;
+    for (let i = 0; i < d[5]; i++) {
+      faders.push({ pin: d[p], channel: d[p + 1], cc: d[p + 2], min: d[p + 3], max: d[p + 4], zero: !!(d[p + 5] & FLAG_ZERO) });
+      p += 6;
+    }
+    config = { numFaders: d[7], faders };
+    render();
+  }
+  if (pending && pending.expect === cmd) {
+    clearTimeout(pending.timer);
+    const r = pending.resolve;
+    pending = null;
+    r(e.target);
+  }
+}
+
+const fadeTimers = {};
+function showValue(i, v) {
+  const card = $('fader' + i);
+  if (!card) return;
+  $('val' + i).textContent = v;
+  $('meter' + i).style.width = (v / 127 * 100) + '%';
+  card.classList.add('active');
+  clearTimeout(fadeTimers[i]);
+  fadeTimers[i] = setTimeout(() => card.classList.remove('active'), 400);
+}
+
+async function connect() {
+  if (!navigator.requestMIDIAccess) {
+    connMsg = ['err', 'Este navegador não tem suporte a MIDI. Abra esta página no Google Chrome ou no Microsoft Edge.'];
+    validate();
+    return;
+  }
+  toast('Procurando o controlador...');
+  try {
+    midi = await navigator.requestMIDIAccess({ sysex: true });
+  } catch (err) {
+    connMsg = ['err', 'O acesso a MIDI foi negado. Clique no ícone de cadeado na barra de endereço, permita "Dispositivos MIDI" e tente de novo.'];
+    toast('');
+    validate();
+    return;
+  }
+
+  midi.inputs.forEach(i => i.onmidimessage = onMessage);
+  midi.onstatechange = e => {
+    if (out && e.port.id === out.id && e.port.state === 'disconnected') {
+      out = inp = null;
+      setConnected(false);
+      connMsg = ['warn', 'O controlador foi desconectado.'];
+      validate();
+    }
+    if (e.port.type === 'input' && e.port.state === 'connected') e.port.onmidimessage = onMessage;
+  };
+
+  // pergunta para cada saída MIDI se ela é o controlador
+  out = inp = null;
+  for (const port of midi.outputs.values()) {
+    try {
+      const from = await request(port, CMD.GET, [], CMD.CONFIG, 600);
+      if (from) { out = port; inp = from; break; }
+    } catch (err) { /* porta ocupada por outro programa */ }
+  }
+
+  if (out) {
+    connMsg = null;
+    setConnected(true, out.name);
+    toast('Configuração lida do controlador.', 'ok');
+  } else {
+    setConnected(false);
+    connMsg = ['err', 'Controlador não encontrado. Confira se ele está ligado no USB, se o firmware configurável foi gravado nele e se nenhum outro programa de música está aberto.'];
+    toast('');
+  }
+  validate();
+}
+
+function encodeConfig() {
+  const data = [config.numFaders];
+  config.faders.forEach(f => data.push(f.pin, f.channel, f.cc, f.min, f.max, f.zero ? FLAG_ZERO : 0));
+  return data;
+}
+
+$('connectBtn').addEventListener('click', connect);
+
+$('saveBtn').addEventListener('click', async () => {
+  toast('Salvando...');
+  const ok = await request(out, CMD.SET, encodeConfig(), CMD.ACK);
+  ok ? toast('Salvo no controlador!', 'ok') : toast('O controlador não respondeu. Tente reconectar.', 'err');
+});
+
+$('reloadBtn').addEventListener('click', async () => {
+  const ok = await request(out, CMD.GET, [], CMD.CONFIG);
+  ok ? toast('Configuração lida do controlador.', 'ok') : toast('O controlador não respondeu.', 'err');
+});
+
+$('resetBtn').addEventListener('click', async () => {
+  if (!confirm('Voltar para a configuração padrão?')) return;
+  if (out) {
+    const ok = await request(out, CMD.RESET, [], CMD.ACK);
+    ok ? toast('Padrão restaurado no controlador.', 'ok') : toast('O controlador não respondeu.', 'err');
+  } else {
+    config = defaultConfig();
+    render();
+    toast('Padrão restaurado. Conecte o controlador para salvar.');
+  }
+});
+
+/* ---------- presets ---------- */
+
+$('exportBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify({ tipo: 'fader-config', versao: 1, ...config }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'faders.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+$('importBtn').addEventListener('click', () => $('importFile').click());
+
+$('importFile').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    if (data.tipo !== 'fader-config' || !Array.isArray(data.faders)) throw new Error();
+    const base = defaultConfig();
+    config = {
+      numFaders: clamp(data.numFaders, 1, info.maxFaders),
+      faders: base.faders.map((d, i) => {
+        const f = data.faders[i] || d;
+        return {
+          pin: clamp(f.pin, 0, info.numPins - 1),
+          channel: clamp(f.channel, 0, 15),
+          cc: clamp(f.cc, 0, 127),
+          min: clamp(f.min, 0, 127),
+          max: clamp(f.max, 0, 127),
+          zero: !!f.zero,
+        };
+      }),
+    };
+    render();
+    toast(out ? 'Arquivo importado. Clique em Salvar para gravar.' : 'Arquivo importado.', 'ok');
+  } catch (err) {
+    toast('Arquivo inválido.', 'err');
+  }
+});
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+# Placas LFH: usam o core e as ferramentas do pacote "Arduino AVR Boards",
+# so mudam o nome USB do dispositivo.
+name=LFH
+version=1.0.0

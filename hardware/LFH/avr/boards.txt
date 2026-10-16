@@ -1,0 +1,52 @@
+# Placas LFH
+# Iguais as placas Arduino originais, mas o dispositivo aparece no computador
+# (Windows, DAW, configurador) com o nome do produto em vez de "Arduino ...".
+# Requer o pacote "Arduino AVR Boards" instalado.
+
+##############################################################
+
+lfh_fader4_micro.name=LFH Fader 4 (Arduino Micro)
+
+lfh_fader4_micro.upload.tool=arduino:avrdude
+lfh_fader4_micro.upload.tool.default=arduino:avrdude
+lfh_fader4_micro.upload.protocol=avr109
+lfh_fader4_micro.upload.maximum_size=28672
+lfh_fader4_micro.upload.maximum_data_size=2560
+lfh_fader4_micro.upload.speed=57600
+lfh_fader4_micro.upload.disable_flushing=true
+lfh_fader4_micro.upload.use_1200bps_touch=true
+lfh_fader4_micro.upload.wait_for_upload_port=true
+
+lfh_fader4_micro.build.mcu=atmega32u4
+lfh_fader4_micro.build.f_cpu=16000000L
+lfh_fader4_micro.build.vid=0x2341
+lfh_fader4_micro.build.pid=0x8037
+lfh_fader4_micro.build.usb_product="LFH Fader 4"
+lfh_fader4_micro.build.board=AVR_MICRO
+lfh_fader4_micro.build.core=arduino:arduino
+lfh_fader4_micro.build.variant=arduino:micro
+lfh_fader4_micro.build.extra_flags={build.usb_flags}
+
+##############################################################
+
+lfh_fader4_leonardo.name=LFH Fader 4 (Arduino Leonardo / Pro Micro)
+
+lfh_fader4_leonardo.upload.tool=arduino:avrdude
+lfh_fader4_leonardo.upload.tool.default=arduino:avrdude
+lfh_fader4_leonardo.upload.protocol=avr109
+lfh_fader4_leonardo.upload.maximum_size=28672
+lfh_fader4_leonardo.upload.maximum_data_size=2560
+lfh_fader4_leonardo.upload.speed=57600
+lfh_fader4_leonardo.upload.disable_flushing=true
+lfh_fader4_leonardo.upload.use_1200bps_touch=true
+lfh_fader4_leonardo.upload.wait_for_upload_port=true
+
+lfh_fader4_leonardo.build.mcu=atmega32u4
+lfh_fader4_leonardo.build.f_cpu=16000000L
+lfh_fader4_leonardo.build.vid=0x2341
+lfh_fader4_leonardo.build.pid=0x8036
+lfh_fader4_leonardo.build.usb_product="LFH Fader 4"
+lfh_fader4_leonardo.build.board=AVR_LEONARDO
+lfh_fader4_leonardo.build.core=arduino:arduino
+lfh_fader4_leonardo.build.variant=arduino:leonardo
+lfh_fader4_leonardo.build.extra_flags={build.usb_flags}
