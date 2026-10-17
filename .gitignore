@@ -2,3 +2,4 @@ build/
 *.hex
 *.elf
 *.json
+*.f3d
