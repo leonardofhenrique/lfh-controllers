@@ -171,6 +171,31 @@
   .toast.ok { color: var(--ok); }
   .toast.err { color: var(--err); }
 
+  /* botoes do Deck */
+  .deck { margin-top: 12px; }
+  .layers { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .layers button { display: inline-flex; align-items: center; gap: 8px; }
+  .layers small { font-size: 11px; opacity: .8; }
+  .swatch { width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--border); display: inline-block; flex: none; }
+  .layer-opts { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-bottom: 12px; }
+  .layer-opts label, .deck .toolbar label { flex-direction: row; align-items: center; gap: 8px; font-size: 13px; }
+  .layer-opts select { width: auto; }
+  .layer-opts input[type=color] { width: 44px; height: 30px; padding: 0; border: 1px solid var(--border); border-radius: 6px; background: none; cursor: pointer; }
+  .deck input[type=range] { accent-color: var(--accent); }
+  .keys { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 720px) { .keys { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .key {
+    border: 1px solid var(--border); border-radius: 10px; padding: 6px 8px 8px; background: var(--bg);
+    display: flex; flex-direction: column; gap: 4px; min-width: 0; transition: border-color .1s, box-shadow .1s;
+  }
+  .key-top { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+  .key-top b { color: var(--text); font-size: 14px; }
+  .key input { font-size: 13px !important; padding: 4px 6px !important; }
+  .key.down { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .key.layer-key { align-items: center; justify-content: center; text-align: center; font-size: 12px; color: var(--muted); }
+  .key.layer-key .swatch { width: 22px; height: 22px; }
+  .key.gap { visibility: hidden; }
+
   details { margin-top: 24px; }
   summary { cursor: pointer; font-weight: 600; }
   details ol { padding-left: 20px; color: var(--muted); }
@@ -183,8 +208,8 @@
   <header>
     <div>
       <div class="title">
-        <h1>LFH Fader 4</h1>
-        <label class="channel-pill">Canal <select id="channel" aria-label="Canal MIDI dos 4 faders"></select></label>
+        <h1 id="model">LFH Fader 4</h1>
+        <label class="channel-pill"><span id="channelLabel">Canal</span> <select id="channel" aria-label="Canal MIDI dos 4 faders"></select></label>
       </div>
       <div class="status" id="status"><span class="dot"></span><span id="statusText">Desconectado</span></div>
     </div>
@@ -200,6 +225,17 @@
     </div>
     <p class="hint" id="pinHint"></p>
     <div class="pins" id="pins"></div>
+  </div>
+
+  <div class="card deck hidden" id="deckCard">
+    <div class="toolbar">
+      <h2>Botões</h2>
+      <label>Brilho dos LEDs <input type="range" id="brightness" min="0" max="127"> <span id="brightnessVal"></span></label>
+    </div>
+    <p class="hint">Cada camada usa um canal MIDI. O botão 21 troca a camada e o LED dele mostra a cor da camada. Os botões mandam a nota com o mesmo número (botão 5 = nota 5) no canal da camada atual.</p>
+    <div class="layers" id="layers"></div>
+    <div class="layer-opts" id="layerOpts"></div>
+    <div class="keys" id="keys"></div>
   </div>
 
   <div class="mixer" id="mixer"></div>
@@ -218,9 +254,10 @@
       <li>O <b>Canal</b>, ao lado do nome lá em cima, vale para os 4 faders. O CC segue a posição: o 1º fader manda CC 1, o 2º manda CC 2, e assim por diante.</li>
       <li>Arraste o <b>⠿</b> no topo de um fader para mudar a ordem. Clique no nome para dar um apelido.</li>
       <li>Arraste as alças laranja ao lado do trilho para escolher os valores mínimo e máximo. Use <b>Inverter</b> se o fader estiver ao contrário.</li>
+      <li>No <b>LFH Deck</b>: escolha a camada nas abas de <b>Botões</b>, ajuste o canal e a cor dela e dê um nome para cada botão. Ao apertar um botão físico, ele acende na tela; ao apertar o botão 21, a tela muda para a camada nova.</li>
       <li>Clique em <b>Salvar no controlador</b>. Tudo fica gravado nele, mesmo se ele for desligado ou ligado em outro computador.</li>
     </ol>
-    <p class="hint">Configurador v2.1. Funciona no Google Chrome ou no Microsoft Edge.</p>
+    <p class="hint">Configurador v2.2 (LFH Fader 4 e LFH Deck). Funciona no Google Chrome ou no Microsoft Edge.</p>
   </details>
 </div>
 
@@ -238,16 +275,28 @@
 </div>
 
 <script>
-// Protocolo SysEx: F0 7D 46 <comando> ... F7 (igual ao firmware MIDI_FADER_CONFIG v2)
-const SYSEX_ID = 0x7D, DEVICE = 0x46;
+// Protocolo SysEx: F0 7D <dispositivo> <comando> ... F7 (firmwares LFH_Fader_4 v2 e LFH_Deck v1)
+const SYSEX_ID = 0x7D;
 const CMD = { GET: 0x01, CONFIG: 0x02, SET: 0x03, RESET: 0x04, ACK: 0x05, MONITOR: 0x06, PINS: 0x07 };
-const FW_REQUIRED = 2;
+const CMD_DECK = { GET_NAMES: 0x10, NAMES: 0x11, SET_NAMES: 0x12, LAYER: 0x13 };
+const MODELS = {
+  fader4: { device: 0x46, name: 'LFH Fader 4', fw: 2, tipo: 'lfh-fader-4', pins: 12 },
+  deck: { device: 0x44, name: 'LFH Deck', fw: 1, tipo: 'lfh-deck', pins: 6 },
+};
 const NUM_FADERS = 4;
 const NAME_LEN = 12;
 const FLAG_ZERO = 0x01, FLAG_INVERT = 0x02;
 const ZERO_ZONE = 10, RAW_TOP = 1020;  // iguais ao firmware
 
-let numPins = 12;
+// Deck: 20 botões com nota + o 21, que troca a camada; posição no painel, linha por linha
+const NUM_BUTTONS = 20, NUM_LAYERS = 3, NAMES_PER_PAGE = 10;
+const KEY_ROWS = [[1, 2, 3, 4, 17], [5, 6, 7, 8, 18], [9, 10, 11, 12, 19], [13, 14, 15, 16, 20, 21]];
+
+let model = MODELS.fader4;
+let numPins = model.pins;
+let viewLayer = 0;          // camada mostrada na tela
+let deviceLayer = 0;        // camada atual no controlador
+const keysDown = new Set(); // "camada:botão" apertados agora
 let config = defaultConfig();
 let savedJson = JSON.stringify(config);
 let midi = null, out = null, inp = null;
@@ -267,11 +316,32 @@ const $ = id => document.getElementById(id);
 
 function defaultConfig() {
   // igual ao padrão do firmware: A3, A2, A1, A0 -> CC 1 a 4
-  return {
+  const c = {
     faders: [0, 1, 2, 3].map(i => ({
       pin: 3 - i, channel: 0, cc: i + 1, min: 42, max: 127, zero: true, invert: false, name: '',
     })),
   };
+  if (model === MODELS.deck) c.deck = defaultDeck();
+  return c;
+}
+
+// igual ao padrão do firmware LFH_Deck: camadas 1-3 nos canais 1-3, laranja, azul e verde
+function defaultDeck() {
+  return {
+    brightness: 20,
+    layers: [[117, 47, 1], [38, 90, 122], [37, 119, 85]].map((rgb, l) => ({ channel: l, rgb })),
+    names: [0, 1, 2].map(() => Array(NUM_BUTTONS).fill('')),
+  };
+}
+
+// cores: o controlador guarda 0-127 por canal de cor
+const hex = rgb => '#' + rgb.map(v => (v * 2).toString(16).padStart(2, '0')).join('');
+const fromHex = h => [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16) >> 1);
+
+function setModel(m) {
+  if (m === model) return;
+  model = m;
+  if (!out) numPins = m.pins;
 }
 
 function clamp(v, lo, hi) {
@@ -302,7 +372,10 @@ function channelOptions(sel) {
 
 function render() {
   config.faders.forEach((f, i) => f.cc = i + 1);  // o CC segue a posição: 1º fader = CC 1...
+  $('model').textContent = document.title = model.name;
+  $('channelLabel').textContent = config.deck ? 'Canal dos faders' : 'Canal';
   $('channel').innerHTML = channelOptions(config.faders[0].channel);
+  renderDeck();
   $('mixer').innerHTML = config.faders.map((f, i) => `
     <div class="strip${assigning && assigning.index === i ? ' assigning' : ''}" data-strip="${i}">
       <div class="strip-top">
@@ -358,6 +431,41 @@ function renderPins() {
       : 'Estas são as entradas dos 4 faders. Arraste uma até um fader, ou toque nela e depois no fader, para trocar. Para descobrir em quais entradas os faders estão, clique em <b>Identificar entradas</b> e mexa neles.';
 }
 
+// Deck: abas das camadas, canal e cor da camada mostrada, e os botões na posição do painel
+function renderDeck() {
+  $('deckCard').classList.toggle('hidden', !config.deck);
+  if (!config.deck) return;
+  const d = config.deck, L = d.layers[viewLayer];
+  $('brightness').value = d.brightness;
+  $('brightnessVal').textContent = Math.round(d.brightness / 127 * 100) + '%';
+  $('layers').innerHTML = d.layers.map((c, l) => `
+    <button data-layer="${l}" aria-pressed="${l === viewLayer}">
+      <span class="swatch" style="background:${hex(c.rgb)}"></span>Camada ${l + 1}${out && l === deviceLayer ? ' <small>(atual)</small>' : ''}
+    </button>`).join('');
+  $('layerOpts').innerHTML = `
+    <label>Canal MIDI <select data-deck="channel" aria-label="Canal MIDI da camada ${viewLayer + 1}">${channelOptions(L.channel)}</select></label>
+    <label>Cor do LED <input type="color" data-deck="color" value="${hex(L.rgb)}" aria-label="Cor da camada ${viewLayer + 1}"></label>`;
+  $('keys').innerHTML = KEY_ROWS.map(row => {
+    const cells = row.map(n => n === 21
+      ? `<div class="key layer-key"><span class="swatch" style="background:${hex(L.rgb)}"></span><span><b>21</b><br>troca a camada</span></div>`
+      : `<div class="key${keysDown.has(viewLayer + ':' + n) ? ' down' : ''}" id="key${n}">
+           <div class="key-top"><b>${n}</b><span>nota ${n}</span></div>
+           <input type="text" data-key="${n}" maxlength="${NAME_LEN}" value="${esc(d.names[viewLayer][n - 1])}"
+                  placeholder="Botão ${n}" aria-label="Nome do botão ${n} na camada ${viewLayer + 1}">
+         </div>`);
+    while (cells.length < 6) cells.push('<div class="key gap"></div>');
+    return cells.join('');
+  }).join('');
+}
+
+// troca só as bolinhas de cor (sem recriar o seletor de cor enquanto ele está aberto)
+function paintSwatches() {
+  const d = config.deck;
+  document.querySelectorAll('#layers .swatch').forEach((s, l) => s.style.background = hex(d.layers[l].rgb));
+  const k = document.querySelector('.layer-key .swatch');
+  if (k) k.style.background = hex(d.layers[viewLayer].rgb);
+}
+
 function pickPin(p) {
   picked = p;
   document.body.classList.toggle('picking', p !== null);
@@ -405,6 +513,11 @@ function validate() {
     msgs.push(['warn', 'Os CCs foram reorganizados pela posição dos faders (1º fader = CC 1, 2º = CC 2...); clique em Salvar para gravar.']);
   for (const p in pins) if (pins[p].length > 1)
     msgs.push(['warn', `${pins[p].join(' e ')} estão na mesma entrada (A${p}).`]);
+  if (config.deck) {
+    const ls = config.deck.layers;
+    for (let a = 0; a < ls.length; a++) for (let b = a + 1; b < ls.length; b++) if (ls[a].channel === ls[b].channel)
+      msgs.push(['warn', `As camadas ${a + 1} e ${b + 1} estão no mesmo canal (${ls[a].channel + 1}): os botões das duas mandam as mesmas notas.`]);
+  }
   showMsgs(msgs);
 }
 
@@ -617,6 +730,52 @@ $('channel').addEventListener('change', e => {
   changed();
 });
 
+/* ---------- botões do Deck ---------- */
+
+const deckCard = $('deckCard');
+
+deckCard.addEventListener('click', e => {
+  const b = e.target.closest('[data-layer]');
+  if (!b) return;
+  viewLayer = +b.dataset.layer;
+  renderDeck();
+});
+
+deckCard.addEventListener('input', e => {
+  const el = e.target, d = config.deck;
+  if (el.dataset.key) {
+    d.names[viewLayer][+el.dataset.key - 1] = cleanName(el.value);
+  } else if (el.id === 'brightness') {
+    d.brightness = +el.value;
+    $('brightnessVal').textContent = Math.round(d.brightness / 127 * 100) + '%';
+  } else if (el.dataset.deck === 'color') {
+    d.layers[viewLayer].rgb = fromHex(el.value);
+    paintSwatches();
+  } else return;
+  changed();
+});
+
+deckCard.addEventListener('change', e => {
+  const el = e.target, d = config.deck;
+  if (el.dataset.key) el.value = d.names[viewLayer][+el.dataset.key - 1];
+  if (el.dataset.deck === 'channel') {
+    d.layers[viewLayer].channel = +el.value;
+    changed();
+  }
+});
+
+// nota vinda dos botões: acende o botão na camada que usa esse canal
+function onNote(status, note, velocity) {
+  const ch = status & 0x0F, down = (status & 0xF0) === 0x90 && velocity > 0;
+  config.deck.layers.forEach((L, l) => {
+    if (L.channel !== ch) return;
+    const k = l + ':' + note;
+    down ? keysDown.add(k) : keysDown.delete(k);
+    const el = l === viewLayer && $('key' + note);
+    if (el) el.classList.toggle('down', down);
+  });
+}
+
 /* ---------- identificar entradas ---------- */
 
 $('identifyBtn').addEventListener('click', () => {
@@ -735,16 +894,42 @@ document.addEventListener('keydown', e => {
 /* ---------- MIDI ---------- */
 
 function sendSysex(cmd, data = []) {
-  if (out) out.send([0xF0, SYSEX_ID, DEVICE, cmd, ...data, 0xF7]);
+  if (out) out.send([0xF0, SYSEX_ID, model.device, cmd, ...data, 0xF7]);
 }
 
-// envia um comando e espera a resposta (CONFIG ou ACK)
+// envia um comando e espera a resposta (CONFIG, NAMES ou ACK)
 function request(port, cmd, data, expect, ms = 1500) {
   return new Promise(resolve => {
     if (pending) clearTimeout(pending.timer);
     pending = { expect, resolve, timer: setTimeout(() => { pending = null; resolve(null); }, ms) };
-    port.send([0xF0, SYSEX_ID, DEVICE, cmd, ...data, 0xF7]);
+    port.send([0xF0, SYSEX_ID, model.device, cmd, ...data, 0xF7]);
   });
+}
+
+// Deck: nomes dos botões em 6 páginas de 10 (página 0 = camada 1, botões 1-10...)
+const pageOf = page => [Math.floor(page / 2), (page % 2) * NAMES_PER_PAGE];
+
+async function loadNames() {
+  if (!config.deck || !out) return true;
+  for (let page = 0; page < NUM_LAYERS * 2; page++) {
+    if (!await request(out, CMD_DECK.GET_NAMES, [page], CMD_DECK.NAMES)) return false;
+  }
+  savedJson = JSON.stringify(config);
+  render();
+  return true;
+}
+
+async function saveNames() {
+  for (let page = 0; page < NUM_LAYERS * 2; page++) {
+    const [l, first] = pageOf(page);
+    const data = [page];
+    for (let n = 0; n < NAMES_PER_PAGE; n++) {
+      const name = config.deck.names[l][first + n];
+      for (let k = 0; k < NAME_LEN; k++) data.push(k < name.length ? name.charCodeAt(k) : 0);
+    }
+    if (!await request(out, CMD_DECK.SET_NAMES, data, CMD.ACK)) return false;
+  }
+  return true;
 }
 
 let deviceFw = null;
@@ -757,16 +942,34 @@ function onMessage(e) {
     config.faders.forEach((f, i) => { if (f.channel === ch && f.cc === d[1]) setCap(i, d[2]); });
     return;
   }
-  if (d[0] !== 0xF0 || d[1] !== SYSEX_ID || d[2] !== DEVICE) return;
+  // notas vindas dos botões do Deck
+  if (((d[0] & 0xF0) === 0x90 || (d[0] & 0xF0) === 0x80) && e.target === inp) {
+    if (config.deck) onNote(d[0], d[1], d[2]);
+    return;
+  }
+  if (d[0] !== 0xF0 || d[1] !== SYSEX_ID || d[2] !== model.device) return;
 
   const cmd = d[3];
   if (cmd === CMD.PINS && e.target === inp) {
     onPins(d);
     return;
   }
+  if (cmd === CMD_DECK.LAYER && e.target === inp && config.deck) {
+    deviceLayer = viewLayer = d[4];
+    renderDeck();
+    return;
+  }
+  if (cmd === CMD_DECK.NAMES && config.deck) {
+    const [l, first] = pageOf(d[4]);
+    for (let n = 0; n < NAMES_PER_PAGE && l < NUM_LAYERS; n++) {
+      let name = '';
+      for (let k = 0, q = 5 + n * NAME_LEN; k < NAME_LEN && d[q + k]; k++) name += String.fromCharCode(d[q + k]);
+      config.deck.names[l][first + n] = name;
+    }
+  }
   if (cmd === CMD.CONFIG) {
     deviceFw = d[4];
-    if (deviceFw >= FW_REQUIRED) {
+    if (deviceFw >= model.fw) {
       numPins = d[6];
       const faders = [];
       let p = 7;
@@ -781,7 +984,20 @@ function onMessage(e) {
         });
         p += 6 + NAME_LEN;
       }
-      config = { faders };
+      // Deck: depois dos faders vêm botões, camadas, camada atual, brilho e 4 bytes por camada.
+      // Os nomes chegam depois, em páginas (loadNames); até lá ficam os que já estavam na tela.
+      if (model === MODELS.deck) {
+        const layers = [];
+        for (let l = 0; l < d[p + 1] && l < NUM_LAYERS; l++) {
+          const q = p + 4 + l * 4;
+          layers.push({ channel: d[q], rgb: [d[q + 1], d[q + 2], d[q + 3]] });
+        }
+        deviceLayer = d[p + 2];
+        const names = config.deck ? config.deck.names : defaultDeck().names;
+        config = { faders, deck: { brightness: d[p + 3], layers, names } };
+      } else {
+        config = { faders };
+      }
       savedJson = JSON.stringify(config);
       // a página usa um canal só; se o controlador tiver canais diferentes, usa o do Fader 1
       const ch = faders[0].channel;
@@ -826,27 +1042,38 @@ async function connect() {
     if (e.port.type === 'input' && e.port.state === 'connected') e.port.onmidimessage = onMessage;
   };
 
-  // pergunta para cada saída MIDI se ela é o controlador (as "LFH" primeiro)
+  // pergunta para cada saída MIDI se ela é um controlador LFH (as "LFH" primeiro),
+  // testando cada modelo: cada um só responde ao próprio byte de dispositivo
   if (monitorTimer) { clearInterval(monitorTimer); monitorTimer = null; }
   out = inp = null;
   deviceFw = null;
+  const before = model;
   const ports = [...midi.outputs.values()].sort((a, b) => /LFH/i.test(b.name) - /LFH/i.test(a.name));
+  search:
   for (const port of ports) {
-    try {
-      const from = await request(port, CMD.GET, [], CMD.CONFIG, 600);
-      if (from) { out = port; inp = from; break; }
-    } catch (err) { /* porta ocupada por outro programa */ }
+    const models = /deck/i.test(port.name) ? [MODELS.deck, MODELS.fader4] : [MODELS.fader4, MODELS.deck];
+    for (const m of models) {
+      setModel(m);
+      try {
+        const from = await request(port, CMD.GET, [], CMD.CONFIG, 600);
+        if (from) { out = port; inp = from; break search; }
+      } catch (err) { /* porta ocupada por outro programa */ }
+    }
   }
+  if (!out) setModel(before);
 
-  if (out && deviceFw < FW_REQUIRED) {
-    connMsg = ['err', `Este controlador está com o firmware antigo (v${deviceFw}). Grave a versão ${FW_REQUIRED} do firmware para usar este configurador.`];
+  if (out && deviceFw < model.fw) {
+    connMsg = ['err', `Este controlador está com o firmware antigo (v${deviceFw}). Grave a versão ${model.fw} do firmware para usar este configurador.`];
     out = inp = null;
     setConnected(false);
     toast('');
   } else if (out) {
     connMsg = null;
+    viewLayer = deviceLayer;
+    keysDown.clear();
     setConnected(true, out.name, deviceFw);
-    toast('Configuração lida do controlador.', 'ok');
+    const ok = await loadNames();
+    ok ? toast('Configuração lida do controlador.', 'ok') : toast('Os nomes dos botões não foram lidos. Clique em Ler do controlador.', 'err');
   } else {
     setConnected(false);
     connMsg = ['err', 'Controlador não encontrado. Confira se ele está ligado no USB, se o firmware configurável foi gravado nele e se nenhum outro programa de música está aberto.'];
@@ -861,6 +1088,11 @@ function encodeConfig() {
     data.push(f.pin, f.channel, f.cc, f.min, f.max, (f.zero ? FLAG_ZERO : 0) | (f.invert ? FLAG_INVERT : 0));
     for (let k = 0; k < NAME_LEN; k++) data.push(k < f.name.length ? f.name.charCodeAt(k) : 0);
   });
+  // Deck: brilho e, por camada, canal e cor (os nomes vão à parte, em páginas)
+  if (config.deck) {
+    data.push(config.deck.brightness);
+    config.deck.layers.forEach(L => data.push(L.channel, ...L.rgb));
+  }
   return data;
 }
 
@@ -868,19 +1100,25 @@ $('connectBtn').addEventListener('click', connect);
 
 $('saveBtn').addEventListener('click', async () => {
   toast('Salvando...');
-  const ok = await request(out, CMD.SET, encodeConfig(), CMD.ACK);
+  const ok = await request(out, CMD.SET, encodeConfig(), CMD.ACK) && (!config.deck || await saveNames());
+  if (ok) {
+    savedJson = JSON.stringify(config);
+    changed();
+  }
   ok ? toast('Salvo no controlador!', 'ok') : toast('O controlador não respondeu. Tente reconectar.', 'err');
 });
 
 $('reloadBtn').addEventListener('click', async () => {
-  const ok = await request(out, CMD.GET, [], CMD.CONFIG);
+  const ok = await request(out, CMD.GET, [], CMD.CONFIG) && await loadNames();
   ok ? toast('Configuração lida do controlador.', 'ok') : toast('O controlador não respondeu.', 'err');
 });
 
 $('resetBtn').addEventListener('click', async () => {
-  if (!confirm('Voltar para a configuração padrão? Os apelidos também serão apagados.')) return;
+  const what = config.deck ? 'Os apelidos dos faders e os nomes dos botões' : 'Os apelidos';
+  if (!confirm(`Voltar para a configuração padrão? ${what} também serão apagados.`)) return;
   if (out) {
-    const ok = await request(out, CMD.RESET, [], CMD.ACK);
+    // o Deck apaga 720 bytes de nomes na EEPROM: pode levar alguns segundos
+    const ok = await request(out, CMD.RESET, [], CMD.ACK, config.deck ? 6000 : 1500) && await loadNames();
     ok ? toast('Padrão restaurado no controlador.', 'ok') : toast('O controlador não respondeu.', 'err');
   } else {
     config = defaultConfig();
@@ -894,10 +1132,11 @@ window.addEventListener('beforeunload', () => { if (monitorTimer) sendSysex(CMD.
 /* ---------- presets ---------- */
 
 $('exportBtn').addEventListener('click', () => {
-  const blob = new Blob([JSON.stringify({ tipo: 'lfh-fader-4', versao: 2, ...config }, null, 2)], { type: 'application/json' });
+  const versao = model === MODELS.deck ? 1 : 2;
+  const blob = new Blob([JSON.stringify({ tipo: model.tipo, versao, ...config }, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'lfh-fader-4.json';
+  a.download = model.tipo + '.json';
   a.click();
   URL.revokeObjectURL(a.href);
 });
@@ -911,7 +1150,13 @@ $('importFile').addEventListener('change', async e => {
   try {
     const data = JSON.parse(await file.text());
     // aceita também os arquivos da versão 1 (onde mínimo > máximo invertia o fader)
-    if (!['lfh-fader-4', 'fader-config'].includes(data.tipo) || !Array.isArray(data.faders)) throw new Error();
+    if (!['lfh-fader-4', 'fader-config', 'lfh-deck'].includes(data.tipo) || !Array.isArray(data.faders)) throw new Error();
+    const target = data.tipo === 'lfh-deck' ? MODELS.deck : MODELS.fader4;
+    if (out && target !== model) {
+      toast(`Este arquivo é do ${target.name}, mas o controlador conectado é um ${model.name}.`, 'err');
+      return;
+    }
+    setModel(target);
     const base = defaultConfig();
     const ch = clamp((data.faders[0] || {}).channel, 0, 15);
     config = {
@@ -930,6 +1175,17 @@ $('importFile').addEventListener('change', async e => {
         };
       }),
     };
+    if (base.deck) {
+      const d = data.deck || {};
+      config.deck = {
+        brightness: clamp(d.brightness ?? base.deck.brightness, 0, 127),
+        layers: base.deck.layers.map((b, l) => {
+          const L = (d.layers || [])[l] || b;
+          return { channel: clamp(L.channel, 0, 15), rgb: [0, 1, 2].map(c => clamp((L.rgb || b.rgb)[c], 0, 127)) };
+        }),
+        names: base.deck.names.map((b, l) => b.map((_, n) => cleanName(((d.names || [])[l] || [])[n]))),
+      };
+    }
     render();
     toast(out ? 'Arquivo importado. Clique em Salvar para gravar.' : 'Arquivo importado.', 'ok');
   } catch (err) {
