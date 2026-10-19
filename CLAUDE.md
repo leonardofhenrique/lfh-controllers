@@ -68,6 +68,7 @@ Painel e ligações em `docs/lfh-deck-layout.svg`.
 - Faders em A3, A2, A1, A0 (esquerda para a direita). Os faders do Deck só podem usar A0–A5 (A6–A11 estão ocupadas).
 - LEDs WS2812 no pino 3, 21 em cadeia, linha por linha da esquerda para a direita (ordem ainda a confirmar com o hardware).
 - 3 camadas, cada uma com canal e cor. Botões 1–20 mandam Note On (vel. 127) / Note On vel. 0 com nota = número do botão, no canal da camada atual. Botão 21 só troca a camada; o LED dele mostra a cor da camada. A camada não é salva: liga sempre na 1.
+- LEDs 1–20: **só o computador controla** (apertar o botão não muda o LED; decisão do usuário). Note On recebido no canal de uma camada: nota = botão, velocity = índice da paleta (0–9, a mesma do `arduino_midi_v5`; acima de 9 ou Note Off apaga). Cores guardadas por camada, só na RAM. Nota 127 (vel. > 0, qualquer canal) apaga tudo, inclusive o LED 21, sem esquecer as cores; nota 126 ou trocar de camada religa.
 - Nomes dos botões: 3 × 20 × 12 bytes direto na EEPROM a partir do endereço 128 (não ficam na RAM).
 - Corrente: o firmware limita os LEDs a 400 mA (`FastLED.setMaxPowerInVoltsAndMilliamps`) e o brilho é configurável.
 

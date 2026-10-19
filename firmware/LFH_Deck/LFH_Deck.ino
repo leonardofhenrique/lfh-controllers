@@ -6,6 +6,10 @@
   - Botoes 1-20: mandam Note On/Off com a nota igual ao numero do botao, no canal
     da camada atual. Cada camada tem o proprio canal MIDI e a propria cor.
   - Botao 21: troca a camada (1 -> 2 -> 3 -> 1); o LED dele mostra a cor da camada.
+  - LEDs 1-20: so o computador controla. Ele manda Note On no canal da camada, com a
+    nota = numero do botao e a velocity = cor da paleta (0 ou Note Off apaga). Cada
+    camada guarda as proprias cores. Nota 127 apaga todos os LEDs; nota 126 religa
+    com as cores que estavam.
   - Os nomes dos botoes (por camada) ficam na EEPROM para o configurador mostrar.
 
   Ligacoes (ver docs/lfh-deck-layout.svg):
@@ -32,6 +36,26 @@ const byte CMD_GET_NAMES = 0x10;  // pede uma pagina de nomes: <pagina>
 const byte CMD_NAMES = 0x11;      // pagina de nomes: <pagina> + 10 nomes de 12 bytes
 const byte CMD_SET_NAMES = 0x12;  // grava uma pagina de nomes: <pagina> + 10 nomes
 const byte CMD_LAYER = 0x13;      // avisa a camada atual: <camada 0-2>
+
+// Retorno do computador (Note On recebido)
+const byte NOTE_ALL_OFF = 127;  // apaga todos os LEDs (as cores ficam guardadas)
+const byte NOTE_ALL_ON = 126;   // religa todos com as cores guardadas
+
+// Paleta: a velocity recebida escolhe a cor (a mesma do arduino_midi_v5).
+// Velocity fora da paleta apaga o LED.
+const CRGB PALETTE[] = {
+  CRGB(0, 0, 0),        // 0 apagado
+  CRGB(255, 255, 255),  // 1 branco
+  CRGB(255, 0, 0),      // 2 vermelho
+  CRGB(0, 0, 255),      // 3 azul
+  CRGB(0, 255, 0),      // 4 verde
+  CRGB(74, 239, 170),   // 5 verde-agua
+  CRGB(234, 95, 2),     // 6 laranja
+  CRGB(179, 193, 0),    // 7 amarelo-limao
+  CRGB(76, 181, 245),   // 8 azul-claro
+  CRGB(232, 46, 105),   // 9 rosa
+};
+const byte PALETTE_SIZE = sizeof(PALETTE) / sizeof(PALETTE[0]);
 
 
 /*********HARDWARE*********/
@@ -89,12 +113,15 @@ byte layer = 0;  // camada atual (nao fica salva: liga sempre na camada 1)
 
 
 void handleSysex(byte cmd, const byte *data, byte len);
+void handleMidi(const midiEventPacket_t &packet);
 
-LFHSysex sysex(LFH_DEVICE_DECK, handleSysex);
+LFHSysex sysex(LFH_DEVICE_DECK, handleSysex, handleMidi);
 LFHFaders faders(config.faders, NUM_FADERS, analogPins, NUM_PINS);
 
 CRGB leds[NUM_KEYS];
 bool ledsDirty = true;
+byte ledColor[NUM_LAYERS][NUM_BUTTONS];  // cor da paleta de cada botao em cada camada (nao fica salva)
+bool ledsOff = false;                    // nota 127 recebida: tudo apagado ate a nota 126
 
 bool keyDown[NUM_KEYS];
 unsigned long keyChanged[NUM_KEYS];
@@ -146,7 +173,6 @@ void buttons() {
 
     keyDown[k] = down;
     keyChanged[k] = millis();
-    ledsDirty = true;
 
     if (k == LAYER_KEY) {
       if (down) setLayer((layer + 1) % NUM_LAYERS);
@@ -163,8 +189,10 @@ void noteOn(byte channel, byte pitch, byte velocity) {
   MidiUSB.flush();
 }
 
+// trocar de camada tambem religa os LEDs se estavam apagados pela nota 127
 void setLayer(byte l) {
   layer = l;
+  ledsOff = false;
   ledsDirty = true;
   sysex.send(CMD_LAYER, &layer, 1);
 }
@@ -176,16 +204,44 @@ CRGB layerColor(byte l) {
   return CRGB(c.r * 2, c.g * 2, c.b * 2);
 }
 
-// LED 21: cor da camada; botoes 1-20: acendem na cor da camada enquanto apertados
+// LEDs 1-20: cores que o computador mandou para a camada atual; LED 21: cor da camada
 void updateLeds() {
   if (!ledsDirty) return;
   ledsDirty = false;
 
-  CRGB color = layerColor(layer);
-  for (byte k = 0; k < NUM_BUTTONS; k++) leds[LED_OF[k]] = keyDown[k] ? color : CRGB::Black;
-  leds[LED_OF[LAYER_KEY]] = color;
+  if (ledsOff) {
+    fill_solid(leds, NUM_KEYS, CRGB::Black);
+  } else {
+    for (byte k = 0; k < NUM_BUTTONS; k++) leds[LED_OF[k]] = PALETTE[ledColor[layer][k]];
+    leds[LED_OF[LAYER_KEY]] = layerColor(layer);
+  }
   FastLED.setBrightness(config.brightness * 2);
   FastLED.show();
+}
+
+// Note On/Off vindo do computador: acende o LED do botao na camada que usa esse canal
+void handleMidi(const midiEventPacket_t &packet) {
+  byte type = packet.byte1 & 0xF0;
+  if (type != 0x90 && type != 0x80) return;
+
+  byte channel = packet.byte1 & 0x0F;
+  byte note = packet.byte2;
+  byte velocity = (type == 0x90) ? packet.byte3 : 0;
+
+  if (note == NOTE_ALL_OFF || note == NOTE_ALL_ON) {
+    if (velocity == 0) return;  // so o Note On conta; o Note Off dessas notas nao faz nada
+    ledsOff = (note == NOTE_ALL_OFF);
+    ledsDirty = true;
+    return;
+  }
+  if (note < 1 || note > NUM_BUTTONS) return;
+
+  byte color = velocity < PALETTE_SIZE ? velocity : 0;
+  for (byte l = 0; l < NUM_LAYERS; l++) {
+    if (config.layers[l].channel != channel) continue;
+    ledColor[l][note - 1] = color;
+    if (l == layer) ledsDirty = true;
+  }
 }
 
 

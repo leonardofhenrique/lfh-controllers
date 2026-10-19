@@ -32,9 +32,29 @@ Faders (nos dois modelos):
 Botões (só no Deck):
 
 - 3 camadas. Cada camada tem um canal MIDI e uma cor. O botão 21 troca a camada (1 → 2 → 3 → 1) e o LED dele mostra a cor da camada atual
-- Os botões 1 a 20 mandam Note On/Off com a nota igual ao número do botão, no canal da camada atual. O LED do botão acende na cor da camada enquanto ele está apertado
+- Os botões 1 a 20 mandam Note On/Off com a nota igual ao número do botão, no canal da camada atual
+- Os LEDs dos botões 1 a 20 são controlados pelo computador (veja abaixo)
 - Nome de cada botão em cada camada (até 12 caracteres, gravado no controlador)
 - Brilho dos LEDs (o firmware também limita a corrente dos LEDs a 400 mA, para não passar do que a USB entrega)
+
+### LEDs do Deck: retorno do computador
+
+Apertar um botão não muda o LED: quem acende e apaga é o programa, mandando de volta para o Deck um **Note On** no **canal da camada**, com a **nota = número do botão** (1 a 20) e a **velocity = cor**:
+
+| Velocity | Cor | | Velocity | Cor |
+|---|---|---|---|---|
+| 0 | apagado | | 5 | verde-água |
+| 1 | branco | | 6 | laranja |
+| 2 | vermelho | | 7 | amarelo-limão |
+| 3 | azul | | 8 | azul-claro |
+| 4 | verde | | 9 | rosa |
+
+Velocity acima de 9 e Note Off também apagam o LED. Cada camada guarda as próprias cores: ao trocar de camada com o botão 21, os LEDs mostram o que o computador mandou para aquela camada. As cores não ficam salvas quando o Deck é desligado.
+
+Notas especiais (Note On com velocity maior que 0, em qualquer canal):
+
+- **Nota 127**: apaga todos os LEDs, inclusive o 21. As cores continuam guardadas.
+- **Nota 126**: religa todos com as cores que estavam. Trocar de camada também religa.
 
 ## Placas compatíveis
 
