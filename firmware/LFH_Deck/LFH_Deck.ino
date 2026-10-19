@@ -54,7 +54,7 @@ const byte LED_OF[NUM_KEYS] = { 0, 1, 2, 3, 5, 6, 7, 8, 10, 11, 12, 13, 15, 16, 
 const byte analogPins[] = { A0, A1, A2, A3, A4, A5 };
 const byte NUM_PINS = sizeof(analogPins);
 
-const unsigned long DEBOUNCE_MS = 10;
+const unsigned long DEBOUNCE_MS = 30;  // com 10 ms alguns botoes repicavam (2-3 notas por toque)
 const unsigned int LED_MAX_MA = 400;  // a USB entrega ~500 mA para tudo
 
 
