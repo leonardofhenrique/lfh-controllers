@@ -123,6 +123,5 @@
 
   <text class="nota" x="20" y="574">• LEDs WS2812 no pino 3, 21 em cadeia (círculo amarelo = posição do LED na cadeia).</text>
 
-  <text class="tit" x="20" y="606">A confirmar</text>
-  <text class="aviso" x="20" y="628">• Ordem dos LEDs: linha por linha, sempre da esquerda para a direita (sem zigue-zague); 4ª linha = LEDs 16–21.</text>
+  <text class="nota" x="20" y="594">• Ordem dos LEDs: linha por linha, sempre da esquerda para a direita; 4ª linha = LEDs 16–21 (testado na placa).</text>
 </svg>
