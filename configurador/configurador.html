@@ -171,6 +171,14 @@
   .toast.ok { color: var(--ok); }
   .toast.err { color: var(--err); }
 
+  /* varios controladores */
+  #devicePick { width: auto; font-weight: 600; padding: 7px 10px; }
+  .chooser { margin-bottom: 12px; border-color: var(--accent); }
+  .choices { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+  .choices button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 180px; padding: 10px 14px; text-align: left; }
+  .choices button b { font-size: 16px; }
+  .choices small { color: var(--muted); font-size: 12px; }
+
   /* botoes do Deck */
   .deck { margin-top: 12px; }
   .layers { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
@@ -213,10 +221,19 @@
       </div>
       <div class="status" id="status"><span class="dot"></span><span id="statusText">Desconectado</span></div>
     </div>
-    <button class="primary" id="connectBtn">Conectar controlador</button>
+    <div class="inline">
+      <select id="devicePick" class="hidden" aria-label="Controlador que está sendo configurado"></select>
+      <button class="primary" id="connectBtn">Conectar controlador</button>
+    </div>
   </header>
 
   <div class="msgs" id="msgs"></div>
+
+  <div class="card chooser hidden" id="chooser">
+    <h2>Qual controlador você quer configurar?</h2>
+    <p class="hint">Há mais de um controlador LFH ligado. Depois dá para trocar pela lista ao lado de <b>Reconectar</b>.</p>
+    <div class="choices" id="choices"></div>
+  </div>
 
   <div class="card">
     <div class="toolbar">
@@ -244,7 +261,7 @@
     <summary>Como usar</summary>
     <ol>
       <li>Ligue o controlador no USB. Feche o seu DAW ou outros programas de música, porque no Windows só um programa por vez pode usar o controlador.</li>
-      <li>Clique em <b>Conectar controlador</b> e permita o acesso a dispositivos MIDI quando o navegador pedir.</li>
+      <li>Clique em <b>Conectar controlador</b> e permita o acesso a dispositivos MIDI quando o navegador pedir. Se houver mais de um controlador LFH ligado, escolha qual configurar; depois dá para trocar pela lista ao lado de <b>Reconectar</b>.</li>
       <li>Para dizer qual fader físico é qual na tela, use um destes jeitos:
         <ul>
           <li>Clique em <b>Mexa para associar</b> e mexa o fader físico: ele é ligado sozinho.</li>
@@ -1021,7 +1038,7 @@ async function connect() {
     validate();
     return;
   }
-  toast('Procurando o controlador...');
+  toast('Procurando controladores...');
   try {
     midi = await navigator.requestMIDIAccess({ sysex: true });
   } catch (err) {
@@ -1033,6 +1050,11 @@ async function connect() {
 
   midi.inputs.forEach(i => i.onmidimessage = onMessage);
   midi.onstatechange = e => {
+    if (e.port.state === 'disconnected' && e.port.type === 'output') {
+      const was = devices.length;
+      devices = devices.filter(d => d.out.id !== e.port.id);
+      if (devices.length !== was) renderDevices();
+    }
     if (out && e.port.id === out.id && e.port.state === 'disconnected') {
       out = inp = null;
       setConnected(false);
@@ -1044,43 +1066,127 @@ async function connect() {
 
   // pergunta para cada saída MIDI se ela é um controlador LFH (as "LFH" primeiro),
   // testando cada modelo: cada um só responde ao próprio byte de dispositivo
-  if (monitorTimer) { clearInterval(monitorTimer); monitorTimer = null; }
+  setConnected(false);
   out = inp = null;
-  deviceFw = null;
+  devices = [];
+  $('chooser').classList.add('hidden');
+  // as respostas da busca mudam a tela; guarda como estava para voltar se não conectar direto
   const before = model;
+  const screen = { config, savedJson, channelNotice, ccNotice, numPins };
   const ports = [...midi.outputs.values()].sort((a, b) => /LFH/i.test(b.name) - /LFH/i.test(a.name));
-  search:
   for (const port of ports) {
     const models = /deck/i.test(port.name) ? [MODELS.deck, MODELS.fader4] : [MODELS.fader4, MODELS.deck];
     for (const m of models) {
       setModel(m);
+      deviceFw = null;
       try {
         const from = await request(port, CMD.GET, [], CMD.CONFIG, 600);
-        if (from) { out = port; inp = from; break search; }
+        if (from) { devices.push({ out: port, inp: from, model: m, fw: deviceFw }); break; }
       } catch (err) { /* porta ocupada por outro programa */ }
     }
   }
-  if (!out) setModel(before);
+  setModel(before);
+  ({ config, savedJson, channelNotice, ccNotice, numPins } = screen);
+  render();
+  renderDevices();
 
-  if (out && deviceFw < model.fw) {
-    connMsg = ['err', `Este controlador está com o firmware antigo (v${deviceFw}). Grave a versão ${model.fw} do firmware para usar este configurador.`];
-    out = inp = null;
-    setConnected(false);
-    toast('');
-  } else if (out) {
+  if (devices.length === 1) {
+    await selectDevice(devices[0]);
+  } else if (devices.length > 1) {
+    // mais de um: a pessoa escolhe qual configurar
     connMsg = null;
-    viewLayer = deviceLayer;
-    keysDown.clear();
-    setConnected(true, out.name, deviceFw);
-    const ok = await loadNames();
-    ok ? toast('Configuração lida do controlador.', 'ok') : toast('Os nomes dos botões não foram lidos. Clique em Ler do controlador.', 'err');
+    toast('');
+    $('statusText').textContent = `${devices.length} controladores encontrados`;
+    $('chooser').classList.remove('hidden');
+    validate();
   } else {
-    setConnected(false);
     connMsg = ['err', 'Controlador não encontrado. Confira se ele está ligado no USB, se o firmware configurável foi gravado nele e se nenhum outro programa de música está aberto.'];
     toast('');
+    render();
   }
+}
+
+/* ---------- vários controladores ligados ---------- */
+
+let devices = [];  // controladores LFH encontrados: { out, inp, model, fw }
+
+function deviceLabel(d) {
+  const same = devices.filter(x => x.model === d.model);
+  return same.length > 1 ? `${d.model.name} ${same.indexOf(d) + 1}` : d.model.name;
+}
+
+function deviceDetail(d) {
+  const port = d.out.name !== d.model.name ? ` · porta ${d.out.name}` : '';
+  return d.fw < d.model.fw ? `firmware antigo (v${d.fw})${port}` : `firmware v${d.fw}${port}`;
+}
+
+// lista no topo (para trocar) e cartão de escolha (logo depois de conectar)
+function renderDevices() {
+  const pick = $('devicePick');
+  pick.classList.toggle('hidden', devices.length < 2);
+  pick.innerHTML = devices.map((d, i) =>
+    `<option value="${i}"${d.out === out ? ' selected' : ''}>${esc(deviceLabel(d))}</option>`).join('')
+    + (out ? '' : '<option value="" selected disabled>Escolha…</option>');
+  $('choices').innerHTML = devices.map((d, i) => `
+    <button data-dev="${i}" ${d.fw < d.model.fw ? 'disabled' : ''}>
+      <b>${esc(deviceLabel(d))}</b><small>${esc(deviceDetail(d))}</small>
+    </button>`).join('');
+  if (devices.length < 2) $('chooser').classList.add('hidden');
+}
+
+async function selectDevice(d) {
+  if (d.out === out) return;
+  if (out && JSON.stringify(config) !== savedJson
+      && !confirm('Há alterações não salvas neste controlador. Trocar mesmo assim?')) {
+    renderDevices();
+    return;
+  }
+  setConnected(false);  // desliga o modo identificar do controlador anterior
+  $('chooser').classList.add('hidden');
+
+  if (d.fw < d.model.fw) {
+    connMsg = ['err', `O ${d.model.name} está com o firmware antigo (v${d.fw}). Grave a versão ${d.model.fw} do firmware para usar este configurador.`];
+    out = inp = null;
+    renderDevices();
+    toast('');
+    render();
+    return;
+  }
+
+  setModel(d.model);
+  out = d.out;
+  inp = d.inp;
+  numPins = d.model.pins;
+  toast('Lendo o controlador...');
+  const ok = await request(out, CMD.GET, [], CMD.CONFIG);
+  if (!ok) {
+    out = inp = null;
+    connMsg = ['err', `O ${deviceLabel(d)} não respondeu. Tente reconectar.`];
+    renderDevices();
+    toast('');
+    render();
+    return;
+  }
+  connMsg = null;
+  viewLayer = deviceLayer;
+  keysDown.clear();
+  lastValue.length = 0;
+  setConnected(true, deviceLabel(d), deviceFw);
+  renderDevices();
+  const named = await loadNames();
+  named ? toast('Configuração lida do controlador.', 'ok') : toast('Os nomes dos botões não foram lidos. Clique em Ler do controlador.', 'err');
   render();
 }
+
+$('devicePick').addEventListener('change', e => {
+  const d = devices[+e.target.value];
+  if (d) selectDevice(d);
+});
+
+$('choices').addEventListener('click', e => {
+  const b = e.target.closest('[data-dev]');
+  if (b) selectDevice(devices[+b.dataset.dev]);
+});
 
 function encodeConfig() {
   const data = [];
