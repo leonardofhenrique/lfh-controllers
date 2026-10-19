@@ -79,8 +79,9 @@ Fader 4: ao atualizar da v1 para a v2, a configuração salva volta ao padrão (
 
 1. Feche o DAW ou outros programas de música (no Windows só um programa por vez usa o controlador).
 2. Abra `configurador/configurador.html` no **Google Chrome** ou no **Microsoft Edge**.
-3. Clique em **Conectar controlador** e permita o acesso a dispositivos MIDI. Se houver mais de um controlador LFH ligado (por exemplo um Fader 4 e um Deck), a página pergunta qual configurar; depois dá para trocar pela lista ao lado de **Reconectar**.
-4. Ajuste e clique em **Salvar no controlador**.
+3. Na tela inicial, clique em **Conectar controlador** e permita o acesso a dispositivos MIDI. Os controladores LFH ligados aparecem como botões.
+4. Clique no controlador que quer configurar. Para ir para outro, use **Trocar controlador** (ou a lista ao lado dele, quando há mais de um ligado).
+5. Ajuste e clique em **Salvar no controlador**.
 
 O configurador só funciona com o firmware v2 do Fader 4 (para o firmware v1, use o configurador da release v1.0.0) e com o firmware v1 do Deck.
 
