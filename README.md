@@ -31,6 +31,7 @@ Faders (nos dois modelos):
 
 Botões (só no Deck):
 
+- Botões numerados pela posição no painel, linha por linha da esquerda para a direita: 1–5, 6–10, 11–15, 16–20 e o 21 no fim da 4ª linha
 - 3 camadas. Cada camada tem um canal MIDI e uma cor. O botão 21 troca a camada (1 → 2 → 3 → 1) e o LED dele mostra a cor da camada atual
 - Os botões 1 a 20 mandam Note On/Off com a nota igual ao número do botão, no canal da camada atual
 - Os LEDs dos botões 1 a 20 são controlados pelo computador (veja abaixo)
@@ -53,7 +54,7 @@ Velocity acima de 9 e Note Off também apagam o LED. Cada camada guarda as próp
 
 Notas especiais (Note On com velocity maior que 0, em qualquer canal):
 
-- **Nota 127**: apaga todos os LEDs, inclusive o 21. As cores continuam guardadas.
+- **Nota 127**: apaga os LEDs dos botões 1 a 20. O LED 21 continua mostrando a camada, e as cores continuam guardadas.
 - **Nota 126**: religa todos com as cores que estavam. Trocar de camada também religa.
 
 ## Placas compatíveis

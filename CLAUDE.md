@@ -62,13 +62,13 @@ Todos os dados do SysEx têm de ficar entre 0 e 127 (bit mais alto zerado). Uma 
 
 Painel e ligações em `docs/lfh-deck-layout.svg`.
 
-- Botões numerados por coluna: 1–4 / 5–8 / 9–12 / 13–16 nas colunas 1–4 (linhas 1–4), 17–20 na 5ª coluna, 21 no fim da 4ª linha.
-- Botões 1–16 no multiplexador CD74HC4067: SIG no pino 4 (= A6), S0–S3 nos pinos 9, 8, 7, 6, EN no GND. Canal do mux = coluna × 4 + linha (botão 1 = C0, 2 = C4, 5 = C1...).
-- Botões 17–20 nos pinos 10, 16, 14, 15; botão 21 no pino 5. Todos com pull-up, apertado = LOW.
+- Botões numerados pela **posição física**, linha por linha da esquerda para a direita: 1–5, 6–10, 11–15, 16–20, e o 21 no fim da 4ª linha (decisão do usuário). Botão N = nota N = LED N.
+- Colunas 1–4 no multiplexador CD74HC4067: SIG no pino 4 (= A6), S0–S3 nos pinos 9, 8, 7, 6, EN no GND. Canal do mux = coluna × 4 + linha (botão 1 = C0, 2 = C4, 6 = C1...). Tabela `KEY_INPUT` no firmware.
+- 5ª coluna (botões 5, 10, 15, 20) nos pinos 10, 16, 14, 15; botão 21 no pino 5. Todos com pull-up, apertado = LOW.
 - Faders em A3, A2, A1, A0 (esquerda para a direita). Os faders do Deck só podem usar A0–A5 (A6–A11 estão ocupadas).
-- LEDs WS2812 no pino 3, 21 em cadeia, linha por linha da esquerda para a direita (ordem testada na placa).
+- LEDs WS2812 no pino 3, 21 em cadeia, hoje na mesma ordem dos botões. O usuário deve mudar a fiação na montagem (provável zigue-zague): aí só muda a tabela `LED_OF`.
 - 3 camadas, cada uma com canal e cor. Botões 1–20 mandam Note On (vel. 127) / Note On vel. 0 com nota = número do botão, no canal da camada atual. Botão 21 só troca a camada; o LED dele mostra a cor da camada. A camada não é salva: liga sempre na 1.
-- LEDs 1–20: **só o computador controla** (apertar o botão não muda o LED; decisão do usuário). Note On recebido no canal de uma camada: nota = botão, velocity = índice da paleta (0–9, a mesma do `arduino_midi_v5`; acima de 9 ou Note Off apaga). Cores guardadas por camada, só na RAM. Nota 127 (vel. > 0, qualquer canal) apaga tudo, inclusive o LED 21, sem esquecer as cores; nota 126 ou trocar de camada religa.
+- LEDs 1–20: **só o computador controla** (apertar o botão não muda o LED; decisão do usuário). Note On recebido no canal de uma camada: nota = botão, velocity = índice da paleta (0–9, a mesma do `arduino_midi_v5`; acima de 9 ou Note Off apaga). Cores guardadas por camada, só na RAM. Nota 127 (vel. > 0, qualquer canal) apaga os LEDs 1–20 sem esquecer as cores; o LED 21 continua mostrando a camada; nota 126 ou trocar de camada religa.
 - Nomes dos botões: 3 × 20 × 12 bytes direto na EEPROM a partir do endereço 128 (não ficam na RAM).
 - Corrente: o firmware limita os LEDs a 400 mA (`FastLED.setMaxPowerInVoltsAndMilliamps`) e o brilho é configurável.
 

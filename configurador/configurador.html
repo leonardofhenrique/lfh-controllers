@@ -249,7 +249,7 @@
       <h2>Botões</h2>
       <label>Brilho dos LEDs <input type="range" id="brightness" min="0" max="127"> <span id="brightnessVal"></span></label>
     </div>
-    <p class="hint">Cada camada usa um canal MIDI. O botão 21 troca a camada e o LED dele mostra a cor da camada. Os botões mandam a nota com o mesmo número (botão 5 = nota 5) no canal da camada atual.</p>
+    <p class="hint">Cada camada usa um canal MIDI. O botão 21 troca a camada e o LED dele mostra a cor da camada. Os botões mandam a nota com o mesmo número (botão 5 = nota 5) no canal da camada atual, e o computador acende o LED do botão devolvendo essa mesma nota.</p>
     <div class="layers" id="layers"></div>
     <div class="layer-opts" id="layerOpts"></div>
     <div class="keys" id="keys"></div>
@@ -307,7 +307,7 @@ const ZERO_ZONE = 10, RAW_TOP = 1020;  // iguais ao firmware
 
 // Deck: 20 botões com nota + o 21, que troca a camada; posição no painel, linha por linha
 const NUM_BUTTONS = 20, NUM_LAYERS = 3, NAMES_PER_PAGE = 10;
-const KEY_ROWS = [[1, 2, 3, 4, 17], [5, 6, 7, 8, 18], [9, 10, 11, 12, 19], [13, 14, 15, 16, 20, 21]];
+const KEY_ROWS = [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10], [11, 12, 13, 14, 15], [16, 17, 18, 19, 20, 21]];
 
 let model = MODELS.fader4;
 let numPins = model.pins;

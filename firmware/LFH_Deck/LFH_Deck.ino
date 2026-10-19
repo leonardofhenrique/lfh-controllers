@@ -3,20 +3,22 @@
   Controlador MIDI USB com 4 faders e 21 botoes com LED, configuravel pelo navegador.
 
   - Faders: iguais aos do Fader 4 (entrada, faixa, inversao, apelido; um canal so).
+  - Botoes numerados pela posicao no painel, linha por linha da esquerda para a
+    direita: 1-5, 6-10, 11-15, 16-20 e o 21 no fim da 4a linha.
   - Botoes 1-20: mandam Note On/Off com a nota igual ao numero do botao, no canal
     da camada atual. Cada camada tem o proprio canal MIDI e a propria cor.
   - Botao 21: troca a camada (1 -> 2 -> 3 -> 1); o LED dele mostra a cor da camada.
   - LEDs 1-20: so o computador controla. Ele manda Note On no canal da camada, com a
     nota = numero do botao e a velocity = cor da paleta (0 ou Note Off apaga). Cada
-    camada guarda as proprias cores. Nota 127 apaga todos os LEDs; nota 126 religa
-    com as cores que estavam.
+    camada guarda as proprias cores. Nota 127 apaga os LEDs 1-20 (o 21 continua
+    mostrando a camada); nota 126 religa com as cores que estavam.
   - Os nomes dos botoes (por camada) ficam na EEPROM para o configurador mostrar.
 
   Ligacoes (ver docs/lfh-deck-layout.svg):
   - Faders em A3, A2, A1, A0 (da esquerda para a direita)
-  - Botoes 1-16 no multiplexador CD74HC4067: SIG no pino 4 (A6), S0-S3 nos pinos 9, 8, 7, 6
-  - Botoes 17-20 nos pinos 10, 16, 14, 15; botao 21 no pino 5
-  - LEDs WS2812 no pino 3, 21 em cadeia
+  - Colunas 1-4 no multiplexador CD74HC4067: SIG no pino 4 (A6), S0-S3 nos pinos 9, 8, 7, 6
+  - 5a coluna (botoes 5, 10, 15, 20) nos pinos 10, 16, 14, 15; botao 21 no pino 5
+  - LEDs WS2812 no pino 3, 21 em cadeia, na mesma ordem dos botoes
 
   Placa: Arduino Leonardo / Micro / Pro Micro (ATmega32u4)
   Bibliotecas: MIDIUSB, FastLED e LFHCore (pasta libraries/ deste repositorio)
@@ -38,7 +40,7 @@ const byte CMD_SET_NAMES = 0x12;  // grava uma pagina de nomes: <pagina> + 10 no
 const byte CMD_LAYER = 0x13;      // avisa a camada atual: <camada 0-2>
 
 // Retorno do computador (Note On recebido)
-const byte NOTE_ALL_OFF = 127;  // apaga todos os LEDs (as cores ficam guardadas)
+const byte NOTE_ALL_OFF = 127;  // apaga os LEDs 1-20 (as cores ficam guardadas; o 21 continua aceso)
 const byte NOTE_ALL_ON = 126;   // religa todos com as cores guardadas
 
 // Paleta: a velocity recebida escolhe a cor (a mesma do arduino_midi_v5).
@@ -61,7 +63,7 @@ const byte PALETTE_SIZE = sizeof(PALETTE) / sizeof(PALETTE[0]);
 /*********HARDWARE*********/
 const byte MUX_SIG = 4;                         // = A6
 const byte MUX_SEL[4] = { 9, 8, 7, 6 };         // S0, S1, S2, S3
-const byte DIRECT_PINS[4] = { 10, 16, 14, 15 }; // botoes 17-20
+const byte DIRECT_PINS[4] = { 10, 16, 14, 15 }; // 5a coluna: botoes 5, 10, 15, 20
 const byte LAYER_PIN = 5;                       // botao 21
 const byte LED_PIN = 3;
 
@@ -69,10 +71,18 @@ const byte NUM_KEYS = 21;     // botoes fisicos
 const byte NUM_BUTTONS = 20;  // botoes que mandam nota (o 21 so troca a camada)
 const byte LAYER_KEY = 20;    // indice do botao 21
 
-// canal do multiplexador de cada botao 1-16 (desce pela coluna)
-const byte MUX_CHANNEL[16] = { 0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15 };
-// posicao na cadeia de LEDs de cada botao 1-21 (linha por linha, da esquerda para a direita)
-const byte LED_OF[NUM_KEYS] = { 0, 1, 2, 3, 5, 6, 7, 8, 10, 11, 12, 13, 15, 16, 17, 18, 4, 9, 14, 19, 20 };
+// De onde vem cada botao 1-20: canal do multiplexador (colunas 1-4, o canal desce
+// pela coluna) ou DIRECT + indice em DIRECT_PINS (5a coluna)
+const byte DIRECT = 0x80;
+const byte KEY_INPUT[NUM_BUTTONS] = {
+  0, 4, 8, 12, DIRECT | 0,
+  1, 5, 9, 13, DIRECT | 1,
+  2, 6, 10, 14, DIRECT | 2,
+  3, 7, 11, 15, DIRECT | 3,
+};
+// posicao na cadeia de LEDs de cada botao 1-21; hoje igual ao numero do botao.
+// Se a fiacao dos LEDs mudar na montagem, so esta tabela muda.
+const byte LED_OF[NUM_KEYS] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 };
 
 // entradas que os faders podem usar (A6-A11 estao ocupadas pelo multiplexador e botoes)
 const byte analogPins[] = { A0, A1, A2, A3, A4, A5 };
@@ -121,7 +131,7 @@ LFHFaders faders(config.faders, NUM_FADERS, analogPins, NUM_PINS);
 CRGB leds[NUM_KEYS];
 bool ledsDirty = true;
 byte ledColor[NUM_LAYERS][NUM_BUTTONS];  // cor da paleta de cada botao em cada camada (nao fica salva)
-bool ledsOff = false;                    // nota 127 recebida: tudo apagado ate a nota 126
+bool ledsOff = false;                    // nota 127 recebida: LEDs 1-20 apagados ate a nota 126
 
 bool keyDown[NUM_KEYS];
 unsigned long keyChanged[NUM_KEYS];
@@ -156,14 +166,14 @@ void loop() {
 
 /*********BOTOES*********/
 bool readKey(byte k) {
-  if (k < 16) {
-    byte ch = MUX_CHANNEL[k];
-    for (byte s = 0; s < 4; s++) digitalWrite(MUX_SEL[s], (ch >> s) & 1);
-    delayMicroseconds(5);  // tempo para o multiplexador trocar de canal
-    return digitalRead(MUX_SIG) == LOW;
-  }
-  if (k < NUM_BUTTONS) return digitalRead(DIRECT_PINS[k - 16]) == LOW;
-  return digitalRead(LAYER_PIN) == LOW;
+  if (k == LAYER_KEY) return digitalRead(LAYER_PIN) == LOW;
+
+  byte in = KEY_INPUT[k];
+  if (in & DIRECT) return digitalRead(DIRECT_PINS[in & 0x03]) == LOW;
+
+  for (byte s = 0; s < 4; s++) digitalWrite(MUX_SEL[s], (in >> s) & 1);
+  delayMicroseconds(5);  // tempo para o multiplexador trocar de canal
+  return digitalRead(MUX_SIG) == LOW;
 }
 
 void buttons() {
@@ -204,17 +214,16 @@ CRGB layerColor(byte l) {
   return CRGB(c.r * 2, c.g * 2, c.b * 2);
 }
 
-// LEDs 1-20: cores que o computador mandou para a camada atual; LED 21: cor da camada
+// LEDs 1-20: cores que o computador mandou para a camada atual (apagados depois da
+// nota 127); LED 21: sempre a cor da camada
 void updateLeds() {
   if (!ledsDirty) return;
   ledsDirty = false;
 
-  if (ledsOff) {
-    fill_solid(leds, NUM_KEYS, CRGB::Black);
-  } else {
-    for (byte k = 0; k < NUM_BUTTONS; k++) leds[LED_OF[k]] = PALETTE[ledColor[layer][k]];
-    leds[LED_OF[LAYER_KEY]] = layerColor(layer);
+  for (byte k = 0; k < NUM_BUTTONS; k++) {
+    leds[LED_OF[k]] = ledsOff ? CRGB(CRGB::Black) : PALETTE[ledColor[layer][k]];
   }
+  leds[LED_OF[LAYER_KEY]] = layerColor(layer);
   FastLED.setBrightness(config.brightness * 2);
   FastLED.show();
 }

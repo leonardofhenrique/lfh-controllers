@@ -21,40 +21,40 @@
   <!-- Painel (vista de cima) -->
   <rect class="painel" x="20" y="20" width="860" height="400" rx="6"/>
 
-  <!-- Botões 1–16: multiplexador CD74HC4067. Canal = coluna × 4 + linha (C0–C15) -->
+  <!-- Botões das colunas 1–4: multiplexador CD74HC4067. Canal = coluna × 4 + linha (C0–C15) -->
   <g>
-    <rect class="mux" x="60"  y="60"  width="56" height="56" rx="4"/><text class="num" x="88"  y="81">1</text><text class="lig" x="88"  y="103">C0</text>
-    <rect class="mux" x="134" y="60"  width="56" height="56" rx="4"/><text class="num" x="162" y="81">2</text><text class="lig" x="162" y="103">C4</text>
-    <rect class="mux" x="208" y="60"  width="56" height="56" rx="4"/><text class="num" x="236" y="81">3</text><text class="lig" x="236" y="103">C8</text>
-    <rect class="mux" x="282" y="60"  width="56" height="56" rx="4"/><text class="num" x="310" y="81">4</text><text class="lig" x="310" y="103">C12</text>
+    <rect class="mux" x="60" y="60" width="56" height="56" rx="4"/><text class="num" x="88" y="81">1</text><text class="lig" x="88" y="103">C0</text>
+    <rect class="mux" x="134" y="60" width="56" height="56" rx="4"/><text class="num" x="162" y="81">2</text><text class="lig" x="162" y="103">C4</text>
+    <rect class="mux" x="208" y="60" width="56" height="56" rx="4"/><text class="num" x="236" y="81">3</text><text class="lig" x="236" y="103">C8</text>
+    <rect class="mux" x="282" y="60" width="56" height="56" rx="4"/><text class="num" x="310" y="81">4</text><text class="lig" x="310" y="103">C12</text>
 
-    <rect class="mux" x="60"  y="134" width="56" height="56" rx="4"/><text class="num" x="88"  y="155">5</text><text class="lig" x="88"  y="177">C1</text>
-    <rect class="mux" x="134" y="134" width="56" height="56" rx="4"/><text class="num" x="162" y="155">6</text><text class="lig" x="162" y="177">C5</text>
-    <rect class="mux" x="208" y="134" width="56" height="56" rx="4"/><text class="num" x="236" y="155">7</text><text class="lig" x="236" y="177">C9</text>
-    <rect class="mux" x="282" y="134" width="56" height="56" rx="4"/><text class="num" x="310" y="155">8</text><text class="lig" x="310" y="177">C13</text>
+    <rect class="mux" x="60" y="134" width="56" height="56" rx="4"/><text class="num" x="88" y="155">6</text><text class="lig" x="88" y="177">C1</text>
+    <rect class="mux" x="134" y="134" width="56" height="56" rx="4"/><text class="num" x="162" y="155">7</text><text class="lig" x="162" y="177">C5</text>
+    <rect class="mux" x="208" y="134" width="56" height="56" rx="4"/><text class="num" x="236" y="155">8</text><text class="lig" x="236" y="177">C9</text>
+    <rect class="mux" x="282" y="134" width="56" height="56" rx="4"/><text class="num" x="310" y="155">9</text><text class="lig" x="310" y="177">C13</text>
 
-    <rect class="mux" x="60"  y="208" width="56" height="56" rx="4"/><text class="num" x="88"  y="229">9</text><text class="lig" x="88"  y="251">C2</text>
-    <rect class="mux" x="134" y="208" width="56" height="56" rx="4"/><text class="num" x="162" y="229">10</text><text class="lig" x="162" y="251">C6</text>
-    <rect class="mux" x="208" y="208" width="56" height="56" rx="4"/><text class="num" x="236" y="229">11</text><text class="lig" x="236" y="251">C10</text>
-    <rect class="mux" x="282" y="208" width="56" height="56" rx="4"/><text class="num" x="310" y="229">12</text><text class="lig" x="310" y="251">C14</text>
+    <rect class="mux" x="60" y="208" width="56" height="56" rx="4"/><text class="num" x="88" y="229">11</text><text class="lig" x="88" y="251">C2</text>
+    <rect class="mux" x="134" y="208" width="56" height="56" rx="4"/><text class="num" x="162" y="229">12</text><text class="lig" x="162" y="251">C6</text>
+    <rect class="mux" x="208" y="208" width="56" height="56" rx="4"/><text class="num" x="236" y="229">13</text><text class="lig" x="236" y="251">C10</text>
+    <rect class="mux" x="282" y="208" width="56" height="56" rx="4"/><text class="num" x="310" y="229">14</text><text class="lig" x="310" y="251">C14</text>
 
-    <rect class="mux" x="60"  y="282" width="56" height="56" rx="4"/><text class="num" x="88"  y="303">13</text><text class="lig" x="88"  y="325">C3</text>
-    <rect class="mux" x="134" y="282" width="56" height="56" rx="4"/><text class="num" x="162" y="303">14</text><text class="lig" x="162" y="325">C7</text>
-    <rect class="mux" x="208" y="282" width="56" height="56" rx="4"/><text class="num" x="236" y="303">15</text><text class="lig" x="236" y="325">C11</text>
-    <rect class="mux" x="282" y="282" width="56" height="56" rx="4"/><text class="num" x="310" y="303">16</text><text class="lig" x="310" y="325">C15</text>
+    <rect class="mux" x="60" y="282" width="56" height="56" rx="4"/><text class="num" x="88" y="303">16</text><text class="lig" x="88" y="325">C3</text>
+    <rect class="mux" x="134" y="282" width="56" height="56" rx="4"/><text class="num" x="162" y="303">17</text><text class="lig" x="162" y="325">C7</text>
+    <rect class="mux" x="208" y="282" width="56" height="56" rx="4"/><text class="num" x="236" y="303">18</text><text class="lig" x="236" y="325">C11</text>
+    <rect class="mux" x="282" y="282" width="56" height="56" rx="4"/><text class="num" x="310" y="303">19</text><text class="lig" x="310" y="325">C15</text>
   </g>
 
-  <!-- Botões 17–20: 5ª coluna, direto nos pinos do Arduino -->
+  <!-- 5ª coluna (botões 5, 10, 15, 20): direto nos pinos do Arduino -->
   <g>
-    <rect class="direto" x="356" y="60"  width="56" height="56" rx="4"/><text class="num" x="384" y="81">17</text><text class="lig" x="384" y="103">pino 10</text>
-    <rect class="direto" x="356" y="134" width="56" height="56" rx="4"/><text class="num" x="384" y="155">18</text><text class="lig" x="384" y="177">pino 16</text>
-    <rect class="direto" x="356" y="208" width="56" height="56" rx="4"/><text class="num" x="384" y="229">19</text><text class="lig" x="384" y="251">pino 14</text>
+    <rect class="direto" x="356" y="60" width="56" height="56" rx="4"/><text class="num" x="384" y="81">5</text><text class="lig" x="384" y="103">pino 10</text>
+    <rect class="direto" x="356" y="134" width="56" height="56" rx="4"/><text class="num" x="384" y="155">10</text><text class="lig" x="384" y="177">pino 16</text>
+    <rect class="direto" x="356" y="208" width="56" height="56" rx="4"/><text class="num" x="384" y="229">15</text><text class="lig" x="384" y="251">pino 14</text>
     <rect class="direto" x="356" y="282" width="56" height="56" rx="4"/><text class="num" x="384" y="303">20</text><text class="lig" x="384" y="325">pino 15</text>
   </g>
 
   <!-- Botão 21: fim da 4ª linha, um pouco afastado; troca o canal MIDI -->
   <rect class="canal" x="440" y="282" width="56" height="56" rx="4"/><text class="num" x="468" y="303">21</text><text class="lig" x="468" y="325">pino 5</text>
-  <text class="nota" x="468" y="362" text-anchor="middle">canal MIDI</text>
+  <text class="nota" x="468" y="362" text-anchor="middle">camada</text>
 
   <!-- LEDs WS2812: posição na cadeia (pino 3), linha por linha, da esquerda para a direita -->
   <g>
@@ -110,18 +110,18 @@
   <!-- Legenda -->
   <rect class="mux" x="520" y="78" width="18" height="18" rx="2"/><text class="nota" x="546" y="92">multiplexador (Cn = canal)</text>
   <rect class="direto" x="520" y="106" width="18" height="18" rx="2"/><text class="nota" x="546" y="120">pino do Arduino</text>
-  <rect class="canal" x="520" y="134" width="18" height="18" rx="2"/><text class="nota" x="546" y="148">canal MIDI</text>
+  <rect class="canal" x="520" y="134" width="18" height="18" rx="2"/><text class="nota" x="546" y="148">troca a camada</text>
   <circle class="led" cx="529" cy="171" r="9"/><text class="nota" x="546" y="176">nº do LED</text>
 
   <!-- Anotações -->
   <text class="tit" x="20" y="452">Confirmado</text>
   <text class="nota" x="20" y="474">• Faders, da esquerda para a direita: A3, A2, A1, A0.</text>
-  <text class="nota" x="20" y="494">• Botões 1–16: CD74HC4067, canal = coluna × 4 + linha (1→C0, 2→C4, 3→C8, 4→C12, 5→C1…).</text>
-  <text class="nota" x="20" y="514">• Botões 17–20: pinos 10, 16, 14, 15. Botão 21 (canal MIDI): pino 5.</text>
+  <text class="nota" x="20" y="494">• Botões numerados linha por linha (1–5, 6–10, 11–15, 16–20 e 21); colunas 1–4 no CD74HC4067.</text>
+  <text class="nota" x="20" y="514">• 5ª coluna (botões 5, 10, 15, 20): pinos 10, 16, 14, 15. Botão 21 (troca a camada): pino 5.</text>
   <text class="nota" x="20" y="534">• CD74HC4067: SIG → pino 4 (= A6 no Leonardo) · S0 → 9 · S1 → 8 · S2 → 7 · S3 → 6</text>
   <text class="nota" x="20" y="554">   EN → GND (sempre habilitado) · VCC → VCC do Arduino · GND → GND do Arduino</text>
 
   <text class="nota" x="20" y="574">• LEDs WS2812 no pino 3, 21 em cadeia (círculo amarelo = posição do LED na cadeia).</text>
 
-  <text class="nota" x="20" y="594">• Ordem dos LEDs: linha por linha, sempre da esquerda para a direita; 4ª linha = LEDs 16–21 (testado na placa).</text>
+  <text class="nota" x="20" y="594">• Ordem dos LEDs: igual à dos botões (LED N = botão N). Pode mudar quando a fiação da montagem for definida.</text>
 </svg>
