@@ -50,3 +50,51 @@ lfh_fader4_leonardo.build.board=AVR_LEONARDO
 lfh_fader4_leonardo.build.core=arduino:arduino
 lfh_fader4_leonardo.build.variant=arduino:leonardo
 lfh_fader4_leonardo.build.extra_flags={build.usb_flags}
+
+##############################################################
+
+lfh_deck_micro.name=LFH Deck (Arduino Micro)
+
+lfh_deck_micro.upload.tool=arduino:avrdude
+lfh_deck_micro.upload.tool.default=arduino:avrdude
+lfh_deck_micro.upload.protocol=avr109
+lfh_deck_micro.upload.maximum_size=28672
+lfh_deck_micro.upload.maximum_data_size=2560
+lfh_deck_micro.upload.speed=57600
+lfh_deck_micro.upload.disable_flushing=true
+lfh_deck_micro.upload.use_1200bps_touch=true
+lfh_deck_micro.upload.wait_for_upload_port=true
+
+lfh_deck_micro.build.mcu=atmega32u4
+lfh_deck_micro.build.f_cpu=16000000L
+lfh_deck_micro.build.vid=0x2341
+lfh_deck_micro.build.pid=0x8037
+lfh_deck_micro.build.usb_product="LFH Deck"
+lfh_deck_micro.build.board=AVR_MICRO
+lfh_deck_micro.build.core=arduino:arduino
+lfh_deck_micro.build.variant=arduino:micro
+lfh_deck_micro.build.extra_flags={build.usb_flags}
+
+##############################################################
+
+lfh_deck_leonardo.name=LFH Deck (Arduino Leonardo / Pro Micro)
+
+lfh_deck_leonardo.upload.tool=arduino:avrdude
+lfh_deck_leonardo.upload.tool.default=arduino:avrdude
+lfh_deck_leonardo.upload.protocol=avr109
+lfh_deck_leonardo.upload.maximum_size=28672
+lfh_deck_leonardo.upload.maximum_data_size=2560
+lfh_deck_leonardo.upload.speed=57600
+lfh_deck_leonardo.upload.disable_flushing=true
+lfh_deck_leonardo.upload.use_1200bps_touch=true
+lfh_deck_leonardo.upload.wait_for_upload_port=true
+
+lfh_deck_leonardo.build.mcu=atmega32u4
+lfh_deck_leonardo.build.f_cpu=16000000L
+lfh_deck_leonardo.build.vid=0x2341
+lfh_deck_leonardo.build.pid=0x8036
+lfh_deck_leonardo.build.usb_product="LFH Deck"
+lfh_deck_leonardo.build.board=AVR_LEONARDO
+lfh_deck_leonardo.build.core=arduino:arduino
+lfh_deck_leonardo.build.variant=arduino:leonardo
+lfh_deck_leonardo.build.extra_flags={build.usb_flags}
