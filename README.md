@@ -1,12 +1,22 @@
-# LFH Fader 4
+# LFH Controllers
 
-Controlador MIDI USB de 4 faders feito com Arduino (ATmega32u4), configurável pelo navegador, sem precisar abrir a IDE do Arduino nem mexer em código.
+Controladores MIDI USB feitos com Arduino (ATmega32u4), configuráveis pelo navegador, sem precisar abrir a IDE do Arduino nem mexer em código.
 
-- **Firmware** (`firmware/MIDI_FADER_CONFIG`): grava uma vez na placa. A configuração fica salva na EEPROM.
-- **Configurador** (`configurador/configurador.html`): página que se conecta ao controlador por MIDI e altera a configuração.
-- **Placas LFH** (`hardware/LFH`): definição de placa para a IDE do Arduino que faz o dispositivo aparecer como "LFH Fader 4" no computador.
+| Modelo | O que tem | Firmware |
+|---|---|---|
+| **LFH Fader 4** | 4 faders | `firmware/LFH_Fader_4` |
+| **LFH Deck** | 4 faders + 21 botões com LED (3 camadas) | `firmware/LFH_Deck` |
+
+- **Firmware**: grava uma vez na placa. A configuração fica salva na EEPROM.
+- **Configurador** (`configurador/configurador.html`): uma página só para os dois modelos. Ela reconhece o controlador conectado e mostra a tela certa.
+- **LFHCore** (`libraries/LFHCore`): código comum aos firmwares (SysEx e leitura dos faders).
+- **Placas LFH** (`hardware/LFH`): definição de placa para a IDE do Arduino que faz o dispositivo aparecer como "LFH Fader 4" ou "LFH Deck" no computador.
+- **Case** (`case/fader4`): modelo 3D impresso do Fader 4.
+- **Documentação** (`docs/`): desenho e ligações do Deck.
 
 ## O que dá para configurar
+
+Faders (nos dois modelos):
 
 - Em qual entrada analógica cada fader está ligado, de três jeitos:
   - **Mexa para associar**: clique no fader na tela e mexa o fader físico
@@ -19,19 +29,30 @@ Controlador MIDI USB de 4 faders feito com Arduino (ATmega32u4), configurável p
 - Inverter o sentido do fader
 - Enviar 0 quando o fader chega ao fim do curso
 
+Botões (só no Deck):
+
+- 3 camadas. Cada camada tem um canal MIDI e uma cor. O botão 21 troca a camada (1 → 2 → 3 → 1) e o LED dele mostra a cor da camada atual
+- Os botões 1 a 20 mandam Note On/Off com a nota igual ao número do botão, no canal da camada atual. O LED do botão acende na cor da camada enquanto ele está apertado
+- Nome de cada botão em cada camada (até 12 caracteres, gravado no controlador)
+- Brilho dos LEDs (o firmware também limita a corrente dos LEDs a 400 mA, para não passar do que a USB entrega)
+
 ## Placas compatíveis
 
-Arduino Micro, Arduino Leonardo e Pro Micro (ATmega32u4). Biblioteca necessária: **MIDIUSB**.
+Arduino Micro, Arduino Leonardo e Pro Micro (ATmega32u4).
 
 ## Como gravar o firmware
 
-1. Copie a pasta `hardware/LFH` para `Documentos\Arduino\hardware\` (crie a pasta `hardware` se não existir) e reabra a IDE do Arduino.
-2. Instale a biblioteca **MIDIUSB** pelo gerenciador de bibliotecas.
-3. Abra `firmware/MIDI_FADER_CONFIG/MIDI_FADER_CONFIG.ino`.
-4. Em **Tools → Board → LFH**, escolha **LFH Fader 4 (Arduino Micro)** ou **LFH Fader 4 (Arduino Leonardo / Pro Micro)**.
-5. Escolha a porta e clique em **Upload**.
+1. Copie a pasta `hardware/LFH` para `Documentos\Arduino\hardware\` (crie a pasta `hardware` se não existir).
+2. Copie a pasta `libraries/LFHCore` para `Documentos\Arduino\libraries\`. Se o repositório estiver dentro de `Documentos\Arduino`, dá para criar um atalho que acompanha as mudanças, no PowerShell:
+   ```powershell
+   New-Item -ItemType Junction -Path "$HOME\Documents\Arduino\libraries\LFHCore" -Target "<pasta do repositório>\libraries\LFHCore"
+   ```
+3. Instale pelo gerenciador de bibliotecas: **MIDIUSB** (os dois modelos) e **FastLED** (só o Deck). Reabra a IDE do Arduino.
+4. Abra `firmware/LFH_Fader_4/LFH_Fader_4.ino` ou `firmware/LFH_Deck/LFH_Deck.ino`.
+5. Em **Tools → Board → LFH**, escolha o modelo e a placa, por exemplo **LFH Deck (Arduino Leonardo / Pro Micro)**.
+6. Escolha a porta e clique em **Upload**.
 
-Ao atualizar da v1 para a v2, a configuração salva volta ao padrão (o formato da memória mudou).
+Fader 4: ao atualizar da v1 para a v2, a configuração salva volta ao padrão (o formato da memória mudou).
 
 ## Como usar o configurador
 
@@ -40,17 +61,19 @@ Ao atualizar da v1 para a v2, a configuração salva volta ao padrão (o formato
 3. Clique em **Conectar controlador** e permita o acesso a dispositivos MIDI.
 4. Ajuste e clique em **Salvar no controlador**.
 
-O configurador v2 só funciona com o firmware v2. Para o firmware v1, use o configurador da release v1.0.0.
+O configurador só funciona com o firmware v2 do Fader 4 (para o firmware v1, use o configurador da release v1.0.0) e com o firmware v1 do Deck.
 
-## Protocolo (v2)
+## Protocolo
 
-O configurador conversa com o firmware por SysEx: `F0 7D 46 <comando> ... F7` (`7D` é o ID reservado para uso não comercial).
+O configurador conversa com o firmware por SysEx: `F0 7D <dispositivo> <comando> ... F7`. `7D` é o ID reservado para uso não comercial; o dispositivo é `46` ('F') no Fader 4 e `44` ('D') no Deck. Cada controlador só responde ao próprio dispositivo, e é assim que o configurador descobre qual está conectado.
+
+### Comandos comuns
 
 | Comando | Byte | Dados |
 |---|---|---|
 | Pedir configuração | `01` | — |
-| Configuração | `02` | versão, nº de faders (4), nº de entradas, e 18 bytes por fader |
-| Gravar configuração | `03` | 18 bytes por fader |
+| Configuração | `02` | versão, nº de faders (4), nº de entradas, e 18 bytes por fader (+ dados do Deck, abaixo) |
+| Gravar configuração | `03` | 18 bytes por fader (+ dados do Deck, abaixo) |
 | Restaurar padrão | `04` | — |
 | Confirmação | `05` | — |
 | Modo identificar | `06` | `1` liga, `0` desliga (desliga sozinho após 3 s sem renovação) |
@@ -58,7 +81,24 @@ O configurador conversa com o firmware por SysEx: `F0 7D 46 <comando> ... F7` (`
 
 Cada fader usa 18 bytes: entrada, canal, CC, mínimo, máximo, flags (`01` = 0 no fim do curso, `02` = invertido) e 12 bytes de apelido em ASCII.
 
-No modo identificar, o firmware liga o pull-up interno de todas as entradas para que as que estão soltas fiquem paradas, e para de enviar CC.
+No modo identificar, o firmware liga o pull-up interno de todas as entradas dos faders para que as que estão soltas fiquem paradas, e para de enviar CC.
+
+### Só no Deck
+
+Depois dos faders, a **configuração** (`02`) traz: nº de botões (21), nº de camadas (3), camada atual, brilho (0–127) e 4 bytes por camada (canal, R, G, B, com cada cor de 0 a 127). **Gravar** (`03`) leva o brilho e os 4 bytes por camada, sem os três primeiros campos.
+
+| Comando | Byte | Dados |
+|---|---|---|
+| Pedir nomes | `10` | página (0–5) |
+| Nomes | `11` | página + 10 nomes de 12 bytes |
+| Gravar nomes | `12` | página + 10 nomes de 12 bytes; responde com `05` |
+| Camada atual | `13` | camada (0–2); o Deck manda quando o botão 21 é apertado |
+
+Páginas de nomes: 0 = camada 1, botões 1–10; 1 = camada 1, botões 11–20; 2 = camada 2, botões 1–10; e assim por diante.
+
+## Versões
+
+As tags levam o modelo na frente, como `fader4-v2.2.0` e `deck-v1.0.0`. As tags antigas (`v1.0.0`, `v2.0.0`, `v2.1.0`) são do Fader 4.
 
 ## Licença
 

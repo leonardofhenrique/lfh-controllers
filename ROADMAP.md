@@ -1,5 +1,20 @@
 # Ideias para o futuro
 
+## LFH Deck: próximos passos
+
+A v1 do firmware (`firmware/LFH_Deck`) e a tela do Deck no configurador já existem: faders iguais aos do Fader 4, 3 camadas (canal e cor de cada uma), botão 21 trocando a camada com a cor no LED dele, e nome de cada botão por camada. O hardware real está em `docs/lfh-deck-layout.svg`: um CD74HC4067 para os botões 1–16, botões 17–21 direto no Arduino.
+
+Ideias que ficaram para depois:
+
+- **Tipo de mensagem por botão**: Note, CC ou Program Change, com número configurável (hoje é sempre a nota igual ao número do botão).
+- **Modo alternado** (liga/desliga) além do momentâneo.
+- **Cores por botão**: cor ligado e cor desligado.
+- **Retorno do computador**: mensagens MIDI recebidas no canal da camada acendem os LEDs (Note/CC com a velocidade escolhendo a cor numa paleta, ou um comando SysEx `20` com botão, R, G, B). Para botão alternado com LED controlado pelo computador, o estado é o que o computador mandar, para não divergir.
+- **Lembrar a camada** ao desligar (gravar na EEPROM só depois de alguns segundos sem mexer, por desgaste).
+- **Migração de configuração**: subir `CONFIG_VERSION` hoje apaga a configuração salva. Implementar migração antes de mudar o formato da `Config` de novo.
+- **Identificação de modelo** (`08`/`09`) com nome e versões. Hoje o configurador descobre o modelo pelo byte de dispositivo (`46` ou `44`), o que já resolve.
+- Nome final do produto.
+
 ## Vários modelos de controlador
 
 - **Modelo no firmware**: o firmware responde a um pedido de identificação com código do modelo, nome (hoje "Fader 4", nome temporário) e versão. O nome fica num texto do firmware, fácil de trocar. Configuradores antigos continuam funcionando.
@@ -9,7 +24,6 @@
   
   Os botões de gravar dependem da gravação pelo navegador (abaixo); até lá, a mensagem orienta a gravar pela IDE do Arduino.
 
-- **Renomear o repositório**: quando houver mais de um modelo, trocar `lfh-fader-4` por algo como `lfh-controllers`. O GitHub mantém histórico e releases e redireciona o link antigo; depois é só atualizar o endereço do `origin` na pasta local.
 
 ## Gravar firmware sem a IDE do Arduino
 

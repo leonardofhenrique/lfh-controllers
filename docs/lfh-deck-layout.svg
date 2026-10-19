@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 650" width="900" height="650" font-family="Segoe UI, Arial, sans-serif">
+  <title>LFH Deck: painel e ligações</title>
+  <style>
+    .painel { fill: #f7f7f5; stroke: #222; stroke-width: 4; }
+    .mux { fill: #fff; stroke: #222; stroke-width: 3; }
+    .direto { fill: #e3eefb; stroke: #1a5fb4; stroke-width: 3; }
+    .canal { fill: #fff3d6; stroke: #b36b00; stroke-width: 3; }
+    .num { font-size: 18px; font-weight: 600; fill: #222; text-anchor: middle; dominant-baseline: central; }
+    .lig { font-size: 12px; font-weight: 600; fill: #1a5fb4; text-anchor: middle; dominant-baseline: central; }
+    .trilho { fill: #fff; stroke: #222; stroke-width: 3; }
+    .cursor { fill: #222; }
+    .rot { font-size: 16px; font-weight: 600; fill: #222; text-anchor: middle; }
+    .pino { font-size: 16px; font-weight: 700; fill: #1a5fb4; text-anchor: middle; }
+    .nota { font-size: 14px; fill: #444; }
+    .tit { font-size: 15px; font-weight: 700; fill: #222; }
+    .aviso { font-size: 14px; fill: #8a5a00; }
+    .led { fill: #ffe066; stroke: #222; stroke-width: 1.5; }
+    .ledn { font-size: 10px; font-weight: 700; fill: #222; text-anchor: middle; dominant-baseline: central; }
+  </style>
+
+  <!-- Painel (vista de cima) -->
+  <rect class="painel" x="20" y="20" width="860" height="400" rx="6"/>
+
+  <!-- Botões 1–16: multiplexador CD74HC4067. Canal = coluna × 4 + linha (C0–C15) -->
+  <g>
+    <rect class="mux" x="60"  y="60"  width="56" height="56" rx="4"/><text class="num" x="88"  y="81">1</text><text class="lig" x="88"  y="103">C0</text>
+    <rect class="mux" x="134" y="60"  width="56" height="56" rx="4"/><text class="num" x="162" y="81">2</text><text class="lig" x="162" y="103">C4</text>
+    <rect class="mux" x="208" y="60"  width="56" height="56" rx="4"/><text class="num" x="236" y="81">3</text><text class="lig" x="236" y="103">C8</text>
+    <rect class="mux" x="282" y="60"  width="56" height="56" rx="4"/><text class="num" x="310" y="81">4</text><text class="lig" x="310" y="103">C12</text>
+
+    <rect class="mux" x="60"  y="134" width="56" height="56" rx="4"/><text class="num" x="88"  y="155">5</text><text class="lig" x="88"  y="177">C1</text>
+    <rect class="mux" x="134" y="134" width="56" height="56" rx="4"/><text class="num" x="162" y="155">6</text><text class="lig" x="162" y="177">C5</text>
+    <rect class="mux" x="208" y="134" width="56" height="56" rx="4"/><text class="num" x="236" y="155">7</text><text class="lig" x="236" y="177">C9</text>
+    <rect class="mux" x="282" y="134" width="56" height="56" rx="4"/><text class="num" x="310" y="155">8</text><text class="lig" x="310" y="177">C13</text>
+
+    <rect class="mux" x="60"  y="208" width="56" height="56" rx="4"/><text class="num" x="88"  y="229">9</text><text class="lig" x="88"  y="251">C2</text>
+    <rect class="mux" x="134" y="208" width="56" height="56" rx="4"/><text class="num" x="162" y="229">10</text><text class="lig" x="162" y="251">C6</text>
+    <rect class="mux" x="208" y="208" width="56" height="56" rx="4"/><text class="num" x="236" y="229">11</text><text class="lig" x="236" y="251">C10</text>
+    <rect class="mux" x="282" y="208" width="56" height="56" rx="4"/><text class="num" x="310" y="229">12</text><text class="lig" x="310" y="251">C14</text>
+
+    <rect class="mux" x="60"  y="282" width="56" height="56" rx="4"/><text class="num" x="88"  y="303">13</text><text class="lig" x="88"  y="325">C3</text>
+    <rect class="mux" x="134" y="282" width="56" height="56" rx="4"/><text class="num" x="162" y="303">14</text><text class="lig" x="162" y="325">C7</text>
+    <rect class="mux" x="208" y="282" width="56" height="56" rx="4"/><text class="num" x="236" y="303">15</text><text class="lig" x="236" y="325">C11</text>
+    <rect class="mux" x="282" y="282" width="56" height="56" rx="4"/><text class="num" x="310" y="303">16</text><text class="lig" x="310" y="325">C15</text>
+  </g>
+
+  <!-- Botões 17–20: 5ª coluna, direto nos pinos do Arduino -->
+  <g>
+    <rect class="direto" x="356" y="60"  width="56" height="56" rx="4"/><text class="num" x="384" y="81">17</text><text class="lig" x="384" y="103">pino 10</text>
+    <rect class="direto" x="356" y="134" width="56" height="56" rx="4"/><text class="num" x="384" y="155">18</text><text class="lig" x="384" y="177">pino 16</text>
+    <rect class="direto" x="356" y="208" width="56" height="56" rx="4"/><text class="num" x="384" y="229">19</text><text class="lig" x="384" y="251">pino 14</text>
+    <rect class="direto" x="356" y="282" width="56" height="56" rx="4"/><text class="num" x="384" y="303">20</text><text class="lig" x="384" y="325">pino 15</text>
+  </g>
+
+  <!-- Botão 21: fim da 4ª linha, um pouco afastado; troca o canal MIDI -->
+  <rect class="canal" x="440" y="282" width="56" height="56" rx="4"/><text class="num" x="468" y="303">21</text><text class="lig" x="468" y="325">pino 5</text>
+  <text class="nota" x="468" y="362" text-anchor="middle">canal MIDI</text>
+
+  <!-- LEDs WS2812: posição na cadeia (pino 3), linha por linha, da esquerda para a direita -->
+  <g>
+    <circle class="led" cx="107" cy="70" r="9"/><text class="ledn" x="107" y="70">1</text>
+    <circle class="led" cx="181" cy="70" r="9"/><text class="ledn" x="181" y="70">2</text>
+    <circle class="led" cx="255" cy="70" r="9"/><text class="ledn" x="255" y="70">3</text>
+    <circle class="led" cx="329" cy="70" r="9"/><text class="ledn" x="329" y="70">4</text>
+    <circle class="led" cx="403" cy="70" r="9"/><text class="ledn" x="403" y="70">5</text>
+
+    <circle class="led" cx="107" cy="144" r="9"/><text class="ledn" x="107" y="144">6</text>
+    <circle class="led" cx="181" cy="144" r="9"/><text class="ledn" x="181" y="144">7</text>
+    <circle class="led" cx="255" cy="144" r="9"/><text class="ledn" x="255" y="144">8</text>
+    <circle class="led" cx="329" cy="144" r="9"/><text class="ledn" x="329" y="144">9</text>
+    <circle class="led" cx="403" cy="144" r="9"/><text class="ledn" x="403" y="144">10</text>
+
+    <circle class="led" cx="107" cy="218" r="9"/><text class="ledn" x="107" y="218">11</text>
+    <circle class="led" cx="181" cy="218" r="9"/><text class="ledn" x="181" y="218">12</text>
+    <circle class="led" cx="255" cy="218" r="9"/><text class="ledn" x="255" y="218">13</text>
+    <circle class="led" cx="329" cy="218" r="9"/><text class="ledn" x="329" y="218">14</text>
+    <circle class="led" cx="403" cy="218" r="9"/><text class="ledn" x="403" y="218">15</text>
+
+    <circle class="led" cx="107" cy="292" r="9"/><text class="ledn" x="107" y="292">16</text>
+    <circle class="led" cx="181" cy="292" r="9"/><text class="ledn" x="181" y="292">17</text>
+    <circle class="led" cx="255" cy="292" r="9"/><text class="ledn" x="255" y="292">18</text>
+    <circle class="led" cx="329" cy="292" r="9"/><text class="ledn" x="329" y="292">19</text>
+    <circle class="led" cx="403" cy="292" r="9"/><text class="ledn" x="403" y="292">20</text>
+    <circle class="led" cx="487" cy="292" r="9"/><text class="ledn" x="487" y="292">21</text>
+  </g>
+
+  <!-- Faders, da esquerda para a direita -->
+  <g>
+    <text class="rot" x="637" y="50">F1</text>
+    <rect class="trilho" x="620" y="60" width="34" height="320" rx="4"/>
+    <rect class="cursor" x="614" y="290" width="46" height="18" rx="3"/>
+    <text class="pino" x="637" y="406">A3</text>
+
+    <text class="rot" x="697" y="50">F2</text>
+    <rect class="trilho" x="680" y="60" width="34" height="320" rx="4"/>
+    <rect class="cursor" x="674" y="290" width="46" height="18" rx="3"/>
+    <text class="pino" x="697" y="406">A2</text>
+
+    <text class="rot" x="757" y="50">F3</text>
+    <rect class="trilho" x="740" y="60" width="34" height="320" rx="4"/>
+    <rect class="cursor" x="734" y="290" width="46" height="18" rx="3"/>
+    <text class="pino" x="757" y="406">A1</text>
+
+    <text class="rot" x="817" y="50">F4</text>
+    <rect class="trilho" x="800" y="60" width="34" height="320" rx="4"/>
+    <rect class="cursor" x="794" y="290" width="46" height="18" rx="3"/>
+    <text class="pino" x="817" y="406">A0</text>
+  </g>
+
+  <!-- Legenda -->
+  <rect class="mux" x="520" y="78" width="18" height="18" rx="2"/><text class="nota" x="546" y="92">multiplexador (Cn = canal)</text>
+  <rect class="direto" x="520" y="106" width="18" height="18" rx="2"/><text class="nota" x="546" y="120">pino do Arduino</text>
+  <rect class="canal" x="520" y="134" width="18" height="18" rx="2"/><text class="nota" x="546" y="148">canal MIDI</text>
+  <circle class="led" cx="529" cy="171" r="9"/><text class="nota" x="546" y="176">nº do LED</text>
+
+  <!-- Anotações -->
+  <text class="tit" x="20" y="452">Confirmado</text>
+  <text class="nota" x="20" y="474">• Faders, da esquerda para a direita: A3, A2, A1, A0.</text>
+  <text class="nota" x="20" y="494">• Botões 1–16: CD74HC4067, canal = coluna × 4 + linha (1→C0, 2→C4, 3→C8, 4→C12, 5→C1…).</text>
+  <text class="nota" x="20" y="514">• Botões 17–20: pinos 10, 16, 14, 15. Botão 21 (canal MIDI): pino 5.</text>
+  <text class="nota" x="20" y="534">• CD74HC4067: SIG → pino 4 (= A6 no Leonardo) · S0 → 9 · S1 → 8 · S2 → 7 · S3 → 6</text>
+  <text class="nota" x="20" y="554">   EN → GND (sempre habilitado) · VCC → VCC do Arduino · GND → GND do Arduino</text>
+
+  <text class="nota" x="20" y="574">• LEDs WS2812 no pino 3, 21 em cadeia (círculo amarelo = posição do LED na cadeia).</text>
+
+  <text class="tit" x="20" y="606">A confirmar</text>
+  <text class="aviso" x="20" y="628">• Ordem dos LEDs: linha por linha, sempre da esquerda para a direita (sem zigue-zague); 4ª linha = LEDs 16–21.</text>
+</svg>
