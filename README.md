@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/logo/lfh-logo-dark.svg">
+  <img src="docs/logo/lfh-logo.svg" alt="LFH" width="240">
+</picture>
+
 # LFH Controllers
 
 Controladores MIDI USB feitos com Arduino (ATmega32u4), configuráveis pelo navegador, sem precisar abrir a IDE do Arduino nem mexer em código.
