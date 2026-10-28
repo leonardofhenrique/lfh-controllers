@@ -129,4 +129,4 @@ As tags levam o modelo na frente, como `fader4-v2.2.0` e `deck-v1.0.0`. As tags 
 
 ## Licença
 
-[CC BY-NC 4.0](LICENSE): pode usar, modificar e compartilhar dando crédito a LFH, mas não para fins comerciais.
+[CC BY-NC-ND 4.0](LICENSE): pode ver, baixar e usar, dando crédito a LFH. Não pode usar para fins comerciais nem distribuir versões modificadas. Para outros usos, fale com o autor.
