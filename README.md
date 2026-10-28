@@ -17,7 +17,7 @@ Controladores MIDI USB feitos com Arduino (ATmega32u4), configuráveis pelo nave
 - **LFHCore** (`libraries/LFHCore`): código comum aos firmwares (SysEx e leitura dos faders).
 - **Placas LFH** (`hardware/LFH`): definição de placa para a IDE do Arduino que faz o dispositivo aparecer como "LFH Fader 4" ou "LFH Deck" no computador.
 - **Case** (`case/fader4`): modelo 3D impresso do Fader 4.
-- **Documentação** (`docs/`): desenho e ligações do Deck.
+- **Documentação** (`docs/`): desenho e ligações do Deck; esquemático e desenho das placas do Deck em `docs/deck/`.
 
 ## O que dá para configurar
 
