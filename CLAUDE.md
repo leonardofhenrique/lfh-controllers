@@ -88,6 +88,6 @@ Painel e ligações em `docs/lfh-deck-layout.svg`.
 ## Convenções
 
 - Comentários e textos da interface em português.
-- Licença CC BY-NC 4.0: não usar em contexto comercial sem autorização.
+- Licença CC BY-NC-ND 4.0: só uso, sem fins comerciais e sem distribuir versões modificadas, sem autorização do autor.
 - Não commitar `.elf`/`.eep`/`.hex`; `build/` fica fora do git.
 - Alterar o protocolo? Atualize aqui, no `README.md` e no configurador no mesmo commit.
