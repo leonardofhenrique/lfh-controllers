@@ -13,6 +13,7 @@ Modelos: **LFH Fader 4** (4 faders) e **LFH Deck** (4 faders + 21 botões com LE
 - `hardware/LFH/avr/`: definição das placas para a IDE do Arduino (`boards.txt`, `platform.txt`). Faz o USB aparecer como "LFH Fader 4" ou "LFH Deck".
 - `case/fader4/`: case impresso do Fader 4 (CadQuery).
 - `docs/lfh-deck-layout.svg`: painel e ligações do Deck.
+- `docs/deck/`: esquemático (`esquematico.png`) e desenho das placas do Deck feitos no EasyEDA (`placa-principal.png`, `placa-arduino.png`, ligadas por um conector 2×9). A serigrafia da placa numera diferente do firmware: KEY1–KEY16 nas 4 primeiras colunas, linha por linha, KEY17–KEY20 na 5ª coluna e KEY21 no fim da 4ª linha (a 1ª linha é KEY1–4 e KEY17). O firmware usa a numeração pela posição física.
 - `build/` (fora do git): `fader4/` e `deck/` com `.hex`, configuradores congelados e notas de release. `build/deck/backup/` guarda a memória lida da placa do Deck antes do primeiro firmware LFH (sketch `arduino_midi_v5`).
 - `ROADMAP.md`: ideias futuras.
 
